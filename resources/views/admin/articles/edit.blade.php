@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', 'Upravit stránku')
 
 @section('content')
-    <div class="container">
+    <div class="container my-5">
 
         <h1>Upravit stránku</h1>
 
@@ -18,9 +18,16 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('article.update', $article->id) }}">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('article.update', $article->id) }}">
             @csrf
             @method('PUT')
+
+
+            <div class="mb-3">
+                <label for="title" class="form-label">Název stránky</label>
+                <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $article->title) }}"
+                    required>
+            </div>
 
 
             <div class="mb-3">
@@ -31,10 +38,31 @@
 
 
             <div class="mb-3">
-                <label for="title" class="form-label">Název stránky</label>
-                <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $article->title) }}"
-                    required>
+                <label for="category" class="form-label">Kategorie</label>
+                <input type="text" name="category" id="category" class="form-control"
+                    value="{{ old('category', $article->category ?? '') }}">
             </div>
+
+            <div class="mb-3">
+                <label for="image" class="form-label">Obrázek</label>
+                <input class="form-control" type="file" name="image" id="image" accept="image/*">
+
+                @if (!empty($article->image))
+                    <small class="text-muted">Aktuální: {{ $article->image }}</small>
+                    <div class="mt-2">
+                        <img src="{{ asset('img/blog/' . $article->image) }}" alt="Náhled" class="img-fluid rounded"
+                            style="max-height: 150px;">
+                    </div>
+                @endif
+            </div>
+
+
+            <div class="mb-3">
+                <label for="perex" class="form-label">Krátký popis (perex)</label>
+                <textarea name="perex" id="perex" class="form-control"
+                    rows="3">{{ old('perex', $article->perex ?? '') }}</textarea>
+            </div>
+
 
             <div class="mb-3">
                 <label for="content" class="form-label">Obsah</label>

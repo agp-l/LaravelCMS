@@ -1,0 +1,12 @@
+.navbar-nav .nav-item .nav-link {
+    text-transform: none !important;
+}
+
+.hidden-button {
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.visible-button {
+    opacity: 1;
+}

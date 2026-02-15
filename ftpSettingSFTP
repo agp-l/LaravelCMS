@@ -1,0 +1,47 @@
+[
+    {
+      "name": "dobrodruzi cz",
+      "host": "62.109.154.41",
+      "protocol": "ftp",
+      "port": 21,
+      "username": "dobro254.dobrodruzi.cz",
+      "password": "vQJPR9eR",
+  
+      "context": "/home/ag/Dokumenty/htdocs/Projekty/Laravel/cms-easy",
+      "remotePath": "/public_html/www",
+  
+      "uploadOnSave": true,
+      "useTempFile": false,        
+      "showHidden": false,
+      "charset": "binary",
+  
+      "ignore": [
+        ".vscode",
+        ".git",
+        ".DS_Store",
+        ".github/**",
+        ".ci",
+        "node_modules/**",
+        "vendor/**"
+      ],
+  
+      "watcher": {
+        "files": "**/*",             
+        "autoUpload": false,        
+        "autoDelete": false
+      },
+  
+      "remoteExplorer": {
+        "filesExclude": [
+          ".git",
+          ".vscode",
+          ".github",
+          "node_modules",
+          "vendor"
+        ]
+      },
+  
+      "profiles": {}
+    }
+  ]
+  

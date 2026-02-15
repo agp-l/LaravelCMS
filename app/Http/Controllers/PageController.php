@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Page;
 use Illuminate\Http\Request;
 
-
 class PageController extends Controller
 {
+    // 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas)
+    public function showBySlug($slug)
+    {
+        $page = Page::where('slug', $slug)->firstOrFail();
+    
+        return view('pages.page-detail', ['page' => $page]);
+    }
+    
+
+    // 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
     public function show()
     {
         $page = Page::first();
@@ -16,15 +25,32 @@ class PageController extends Controller
             abort(404, 'Stránka nenalezena');
         }
 
-        return view('page', ['page' => $page]);
+        return view('pages.page-detail', ['page' => $page]);
     }
 
+    // 🔹 Zobrazení stránky podle ID – např. z administrace jako náhled
+    public function showById($id)
+    {
+        $page = Page::findOrFail($id);
 
+        return view('pages.page-detail', ['page' => $page]);
+    }
+
+    // 🔸 ADMIN – přehled všech stránek v administraci
+    public function index()
+    {
+        $pages = Page::orderBy('created_at', 'desc')->get();
+
+        return view('admin.pages.index', compact('pages'));
+    }
+
+    // 🔸 ADMIN – vytvoření nové stránky (zobrazení formuláře)
     public function create()
     {
         return view('admin.pages.create');
-
     }
+
+    // 🔸 ADMIN – uložení nové stránky
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -33,7 +59,6 @@ class PageController extends Controller
             'content' => 'nullable|string',
             'published' => 'nullable',
         ]);
-        
 
         Page::create([
             'title' => $validated['title'],
@@ -41,35 +66,23 @@ class PageController extends Controller
             'content' => $validated['content'] ?? '',
             'published' => $request->has('published'),
         ]);
-        
 
         return redirect()->route('page.index')->with('success', 'Stránka byla vytvořena.');
     }
 
-    public function index()
-    {
-        $pages = Page::orderBy('created_at', 'desc')->get();
-        return view('admin.pages.index', compact('pages'));
-    }
-
-
-    public function adminIndex()
-    {
-        $pages = Page::orderBy('created_at', 'desc')->get(); // všechny stránky, i nezveřejněné
-
-        return view('admin.pages', ['pages' => $pages]);
-    }
-
-
+    // 🔸 ADMIN – editace stránky
     public function edit($id)
     {
         $page = Page::findOrFail($id);
-        return view('admin.pages.edit', compact('page'));
 
+        return view('admin.pages.edit', compact('page'));
     }
 
+    // 🔸 ADMIN – aktualizace stránky
     public function update(Request $request, $id)
     {
+        //dd($request->all());
+
         $page = Page::findOrFail($id);
 
         $validated = $request->validate([
@@ -78,20 +91,19 @@ class PageController extends Controller
             'content' => 'nullable|string',
             'published' => 'nullable',
         ]);
-        
 
         $page->update([
             'title' => $validated['title'],
             'slug' => $validated['slug'],
-            'content' => $validated['content'] ?? '',
+            //'content' => $validated['content'] ?? '',
+            'content' => $request->input('content', ''),
             'published' => $request->has('published'),
         ]);
-        
-        
 
         return redirect('/admin/stranky')->with('success', 'Stránka byla upravena.');
     }
 
+    // 🔸 ADMIN – smazání stránky
     public function destroy($id)
     {
         $page = Page::findOrFail($id);
@@ -100,34 +112,28 @@ class PageController extends Controller
         return redirect('/admin/stranky')->with('success', 'Stránka byla smazána.');
     }
 
-
-
-    public function showById($id)
-    {
-        $page = Page::findOrFail($id); // najde stránku nebo vyhodí 404
-
-        return view('pages/page-detail', ['page' => $page]);
-    }
-
-    public function showBySlug($slug)
-    {
-        $page = Page::where('slug', $slug)->firstOrFail();
-    
-        return view('pages/page-detail', ['page' => $page]);
-    }
-
-
+    // 🔸 ADMIN – přepnutí stavu "published"
     public function togglePublished($id)
-{
-    $page = Page::findOrFail($id);
-    $page->published = !$page->published;
-    $page->save();
+    {
+        $page = Page::findOrFail($id);
+        $page->published = !$page->published;
+        $page->save();
 
-    return redirect()->route('page.index')->with('success', 'Změněn stav zveřejnění stránky.');
+        return redirect()->route('page.index')->with('success', 'Změněn stav zveřejnění stránky.');
+    }
+
+
+    public function preview($id)
+    {
+        $page = Page::findOrFail($id);
+
+        return view('pages.page-detail', [
+            'page' => $page,
+            'preview' => true
+        ]);
+    }
+
+
+
+
 }
-
-    
-
-}
-
-

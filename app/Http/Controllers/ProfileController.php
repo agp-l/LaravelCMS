@@ -8,33 +8,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash; 
 
 class ProfileController extends Controller
 {
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): View
+    public function show(Request $request): View
     {
-        return view('profile.edit', [
+        return view('admin.profile.show', [
             'user' => $request->user(),
         ]);
     }
+
+    public function edit(Request $request): View
+{
+    return view('admin.profile.edit', [
+        'user' => $request->user(),
+    ]);
+}
 
     /**
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user = $request->user();
+    
+        $validated = $request->validated();
+    
+        // NEUKLÁDEJME password, pokud není vyplněn
+        if ($request->filled('password')) {
+            $validated['password'] = Hash::make($request->password);
+        } else {
+            unset($validated['password']); // jistota – nebude ani pokus o zápis
         }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    
+        $user->fill($validated);
+    
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+    
+        $user->save();
+    
+        return Redirect::route('profile.show')->with('status', 'profile-updated');
     }
 
     /**
@@ -57,4 +76,13 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+
+    public function delete(Request $request): View
+{
+    return view('admin.profile.delete', [
+        'user' => $request->user(),
+    ]);
+}
+
 }

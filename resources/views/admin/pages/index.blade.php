@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', 'Admin – statické stránky')
 
 @section('content')
-    <div class="container">
+    <div class="container my-5">
 
         <h3 class="mb-4">Stránky</h3>
 
@@ -30,8 +30,10 @@
                         </td>
                         <td>
                             @if ($page->slug)
-                                <a href="{{ route('page.show', ['slug' => $page->slug]) }}"
-                                    class="btn btn-sm btn-primary">Zobrazit</a>
+                                <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('page.show', ['slug' => $page->slug], false)) }}"
+                                    class="btn btn-sm btn-primary" target="_blank">
+                                    Zobrazit
+                                </a>
                             @else
                                 <span class="text-muted">Bez slugu</span>
                             @endif

@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', 'Upravit odkaz')
 
 @section('content')
-    <div class="container">
+<div class="container my-5">
         <h1 class="mb-4">Upravit odkaz v menu</h1>
 
         @if ($errors->any())
@@ -16,7 +16,7 @@
             </div>
         @endif
 
-        <form action="{{ route('menu.update', $menu->id) }}" method="POST">
+        <form action="{{ route('menu.update', $menu->id) }}" id="menu-form" method="POST">
             @csrf
             @method('PUT')
 

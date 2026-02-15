@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('content')
-<div class="container">
+<div class="container my-5">   
     
-    <h1>➕ Vytvořit novou stránku</h1>
+    <h1><i class="fad fa-plus-square"></i>   Vytvořit novou stránku</h1>
 
     <form action="{{ route('page.store') }}" method="POST">
         @csrf
@@ -28,7 +28,7 @@
             <label class="form-check-label" for="published">Zveřejnit</label>
         </div>
 
-        <button type="submit" class="btn btn-primary">💾 Uložit stránku</button>
+        <button type="submit" class="btn btn-primary">Uložit stránku</button>
     </form>
 </div>
 @endsection

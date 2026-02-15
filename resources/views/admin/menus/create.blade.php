@@ -1,11 +1,11 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', 'Vytvořit novou položku menu')
 
 @section('content')
-    <div class="container">
+<div class="container my-5">
 
-        <h1 class="mb-4">➕ Nová položka menu</h1>
+        <h1 class="mb-4"><i class="fad fa-plus-square"></i>  Nová položka menu</h1>
 
         <form action="{{ route('menu.store') }}" method="POST">
             @csrf

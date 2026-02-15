@@ -1,31 +1,34 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-    </div>
+@extends($layout ?? 'layouts.default.app')
 
-    @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
-        </div>
-    @endif
+@section('title', 'Ověření e-mailu')
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+@section('content')
+    <div class="container py-5" style="max-width: 600px">
+        <h2 class="mb-4">Ověřte svůj e-mail</h2>
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
+        @if (session('status') === 'verification-link-sent')
+            <div class="alert alert-success">
+                Na vaši e-mailovou adresu byl odeslán nový ověřovací odkaz.
             </div>
+        @endif
+
+        <p class="mb-4">
+            Před pokračováním prosím ověřte svůj e-mail kliknutím na odkaz, který jsme vám poslali.
+            Pokud jste e-mail neobdrželi, můžeme vám ho znovu odeslat.
+        </p>
+
+        <form method="POST" action="{{ route('verification.send') }}" class="d-inline-block me-2">
+            @csrf
+            <button type="submit" class="btn btn-primary">
+                Znovu odeslat ověřovací e-mail
+            </button>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" class="d-inline-block">
             @csrf
-
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
+            <button type="submit" class="btn btn-outline-secondary">
+                Odhlásit se
             </button>
         </form>
     </div>
-</x-guest-layout>
+@endsection

@@ -1,13 +1,24 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', 'Admin – všechny stránky')
 
 @section('content')
-    <div class="container">
+    <div class="container my-5">
 
         <h3 class="mb-4">Články</h3>
 
         <a href="{{ route('article.create') }}" class="btn btn-success mb-3">+ Přidat nový článek</a>
+
+        <form method="GET" action="{{ route('article.index') }}" class="mb-3">
+            <select name="category" onchange="this.form.submit()" class="form-select">
+                <option value="">-- Všechny kategorie --</option>
+                @foreach(\App\Models\Article::select('category')->distinct()->pluck('category') as $cat)
+                    @if ($cat)
+                        <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                    @endif
+                @endforeach
+            </select>
+        </form>
 
         <table class="table table-bordered table-striped">
             <thead>
@@ -30,8 +41,10 @@
                         </td>
                         <td>
                             @if ($article->slug)
-                                <a href="{{ route('article.show', ['slug' => $article->slug]) }}"
-                                    class="btn btn-sm btn-primary">Zobrazit</a>
+                                <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.show', ['slug' => $article->slug], false)) }}"
+                                    class="btn btn-sm btn-primary">
+                                    Zobrazit
+                                </a>
                             @else
                                 <span class="text-muted">Bez slugu</span>
                             @endif

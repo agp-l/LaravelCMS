@@ -1,7 +1,7 @@
 
 
 
-@extends('layouts.app')
+@extends($layout ?? 'layouts.default.app')
 
 @section('title', $page->title)
 
@@ -23,12 +23,43 @@
                 </div>
             @endauth
 
+
+
+
+
+
         {{-- Plná šířka bez kontejneru --}}
         <div class="px-0" style="text-align: justify; text-justify: inter-character;">
         <!--<h1 class="display-6 fw-bold text-center mb-2">{{ $page->title }}</h1>-->
 
 
-            <div>{!! $page->content !!}</div>
+           
+
+
+
+          
+                @php
+                    $blocks = json_decode($page->content, true);
+                @endphp
+            
+                @if (is_array($blocks))
+                    @foreach ($blocks as $block)
+                        @includeIf('components.pageblocks.' . $block['type'], ['columns' => $block['columns'] ?? []])
+                    @endforeach
+                @else
+                <div>{!! $page->content !!}</div>
+                @endif
+   
+
+
+
+
+
+
+
+
+
+
         </div>
     </section>
 
