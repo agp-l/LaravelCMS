@@ -1,242 +1,212 @@
-<!-- Bootstrap Bundle (včetně Popper.js) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
+<!-- Theme JS -->
+<script src="/template/mizzle/js/bootstrap.bundle.min.js"></script>
+<script src="/template/mizzle/js/purecounter_vanilla.js"></script>
+<script src="/template/mizzle/js/index.js"></script>
+<script src="/template/mizzle/js/swiper-bundle.min.js"></script>
+<script src="/template/mizzle/js/functions.js"></script>
 
+<!-- TinyMCE -->
+<script src="https://cdn.tiny.cloud/1/dcpt068f6z0iexoyf3nng4ck3m92hgfr53phm4opmcqv405v/tinymce/6/tinymce.min.js"
+        referrerpolicy="origin"></script>
 
 <script>
-    function copyToClipboard(id) {
-        const input = document.getElementById(id);
-        navigator.clipboard.writeText(input.value).then(function () {
-            alert('Adresa zkopírována: ' + input.value);
-        }, function (err) {
-            alert('Chyba při kopírování');
-        });
-    }
+console.log('MARKER: mizzle/scripts.blade.php loaded');
 </script>
 
+{{-- -------------------------------------------------- --}}
+{{-- SLUGIFY --}}
+{{-- -------------------------------------------------- --}}
+<script>
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+}
 
-@if (!session('tinymce_disabled'))
-    <!-- TinyMCE (z CDN) -->
-    <script src="https://cdn.tiny.cloud/1/dcpt068f6z0iexoyf3nng4ck3m92hgfr53phm4opmcqv405v/tinymce/6/tinymce.min.js"
-        referrerpolicy="origin"></script>
-    <script>
-        function slugify(text) {
-            return text
-                .toString()
-                .toLowerCase()
-                .normalize('NFD')                  // Odstraní diakritiku
-                .replace(/[\u0300-\u036f]/g, '')   // Další diakritika
-                .replace(/[^a-z0-9\s-]/g, '')      // Odstraní speciální znaky
-                .trim()
-                .replace(/\s+/g, '-')              // Mezera → pomlčka
-                .replace(/-+/g, '-');              // Více pomlček → jedna
+document.addEventListener('DOMContentLoaded', function () {
+    const titleInput = document.getElementById('title');
+    const slugInput  = document.getElementById('slug');
+
+    if (!titleInput || !slugInput) return;
+
+    titleInput.addEventListener('input', function () {
+        if (!slugInput.value || slugInput.value === slugify(slugInput.value)) {
+            slugInput.value = slugify(titleInput.value);
         }
+    });
+});
+</script>
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const titleInput = document.getElementById('title');
-            const slugInput = document.getElementById('slug');
+{{-- -------------------------------------------------- --}}
+{{-- COPY TO CLIPBOARD --}}
+{{-- -------------------------------------------------- --}}
+<script>
+function copyToClipboard(id) {
+    const input = document.getElementById(id);
+    if (!input) return;
 
-            if (titleInput && slugInput) {
-                titleInput.addEventListener('input', function () {
-                    if (!slugInput.value || slugInput.value === slugify(slugInput.value)) {
-                        slugInput.value = slugify(titleInput.value);
-                    }
-                });
-            }
-        });
-    </script>
+    navigator.clipboard.writeText(input.value)
+        .then(() => alert('Adresa zkopírována: ' + input.value))
+        .catch(() => alert('Chyba při kopírování'));
+}
+</script>
 
-    <script>
-        tinymce.init({
-            selector: 'textarea#content',
-            plugins: 'lists link image code',
-            toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist | link image | code',
-            menubar: false,
-            height: 400,
-            entity_encoding: 'raw',
+{{-- -------------------------------------------------- --}}
+{{-- TINYMCE --}}
+{{-- -------------------------------------------------- --}}
+@if (!session('tinymce_disabled'))
+<script>
+tinymce.init({
+    selector: 'textarea#content',
+    plugins: 'lists link image code',
+    toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist | link image | code',
+    menubar: false,
+    height: 400,
+    entity_encoding: 'raw',
 
-            // 🔽 Tohle úplně vypne validaci a přepisování:
-            verify_html: false,
-            valid_elements: '*[*]',
-            extended_valid_elements: '*[*]',
-            valid_children: '+body[*]',
-            forced_root_block: false, // pokud chceš povolit i fragmenty bez <p>
+    verify_html: false,
+    valid_elements: '*[*]',
+    extended_valid_elements: '*[*]',
+    valid_children: '+body[*]',
+    forced_root_block: false,
 
-            // Volitelně:
-            // content_css: false, // neaplikuje žádné výchozí styly
-
-            relative_urls: false,
-            remove_script_host: false,
-            convert_urls: false,
-
-
-        });
-    </script>
+    relative_urls: false,
+    remove_script_host: false,
+    convert_urls: false,
+});
+</script>
 @endif
 
-
-
-
-
-
+{{-- -------------------------------------------------- --}}
+{{-- SORTABLE MENU --}}
+{{-- -------------------------------------------------- --}}
+@if (!session('tinymce_disabled'))
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
-    console.log('🔄 Skript načten...');
+document.addEventListener('DOMContentLoaded', function () {
 
+    const form   = document.getElementById('menu-order-form');
+    const input  = document.getElementById('order-data');
+    const groups = document.querySelectorAll('.nested-sortable');
 
-    const form = document.getElementById('menu-order-form');
-    const container = document.getElementById('nested-menu');
-    const input = document.getElementById('order-data');
-    const submitBtn = document.getElementById('submit-button');
-    const nestedSortables = document.querySelectorAll('.nested-sortable');
+    if (!form || !input || !groups.length) return;
 
-    if (form) console.log('📋 Formulář nalezen.');
-    else console.warn('❌ Formulář nenalezen!');
-
-    if (container) console.log('📦 Kontejner pro menu nalezen.');
-    else console.warn('❌ Kontejner pro menu nenalezen!');
-
-    if (input) console.log('📝 Skrytý input nalezen.');
-    else console.warn('❌ Skrytý input nenalezen!');
-
-    if (submitBtn) {
-        console.log('🧪 Submit tlačítko připraveno.');
-        submitBtn.addEventListener('click', function () {
-            console.log('🖱️ Kliknutí na submit tlačítko zaznamenáno.');
+    groups.forEach(el => {
+        new Sortable(el, {
+            group: 'nested',
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.65
         });
-    }
+    });
 
-    if (nestedSortables.length > 0) {
-        console.log(`✅ Nalezeno ${nestedSortables.length} tříd "nested-sortable".`);
-        nestedSortables.forEach(el => {
-            new Sortable(el, {
-                group: 'nested',
-                animation: 150,
-                fallbackOnBody: true,
-                swapThreshold: 0.65
-            });
-            console.log('🔧 Sortable inicializován.');
-        });
-    } else {
-        console.warn('❌ Žádný nested-sortable kontejner nenalezen.');
-    }
+    form.addEventListener('submit', function () {
 
-    form?.addEventListener('submit', function (e) {
-        const form = document.querySelector('#menu-form');
-        console.log(' Formulář nalezen:', form);
-        //e.preventDefault();
         const order = [];
 
         function traverse(listGroup, parentId = null) {
-            const items = Array.from(listGroup.children).filter(el => el.classList.contains('list-group-item'));
+            const items = Array.from(listGroup.children)
+                .filter(el => el.classList.contains('list-group-item'));
 
             items.forEach((item, index) => {
                 const id = item.getAttribute('data-id');
                 if (id) {
-                    order.push({ id: id, parent_id: parentId, order: index });
+                    order.push({ id, parent_id: parentId, order: index });
                 }
 
-                // najdi vnořenou skupinu
                 const nested = item.querySelector('.nested-sortable');
-                if (nested) {
-                    traverse(nested, id);
-                }
+                if (nested) traverse(nested, id);
             });
         }
 
-        // začneme traversovat od každé nejvyšší .nested-sortable
-        document.querySelectorAll('#nested-menu > .nested-sortable').forEach(group => {
-            traverse(group, null);
-        });
+        document.querySelectorAll('#nested-menu > .nested-sortable')
+            .forEach(group => traverse(group));
 
-        console.log('📦 Vygenerované pořadí:', order);
         input.value = JSON.stringify(order);
-        console.log('✅ Data zapsána do hidden inputu. 📝');
-
-        form.submit(); // odkomentuj až bude vše OK
     });
+
+});
 </script>
+@endif
 
-
-
-
-
-
-
+{{-- -------------------------------------------------- --}}
+{{-- BLOKOVÝ EDITOR STRÁNKY --}}
+{{-- -------------------------------------------------- --}}
 <script>
-    function confirmDelete(button) {
-        if (!confirm('Opravdu smazat tento odkaz?')) return false;
+document.addEventListener('DOMContentLoaded', function () {
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = button.closest('[data-form]').dataset.form;
+    const form = document.getElementById('page-form');
+    if (!form) return;
 
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = '_token';
-        csrf.value = '{{ csrf_token() }}';
-        form.appendChild(csrf);
+    const mode = form.dataset.editorMode || 'html';
+    if (mode !== 'blocks') return;
 
-        const method = document.createElement('input');
-        method.type = 'hidden';
-        method.name = '_method';
-        method.value = 'DELETE';
-        form.appendChild(method);
+    const blocksRoot      = document.getElementById('json-blocks');
+    const contentTextarea = document.getElementById('json-content');
 
-        document.body.appendChild(form);
-        form.submit();
+    if (!blocksRoot || !contentTextarea) return;
 
-        return false;
-    }
-</script>
+    form.addEventListener('submit', function () {
 
+        const cards = blocksRoot.querySelectorAll('.card');
+        if (!cards.length) return; // ochrana proti []
 
+        const blocks = [];
 
+        cards.forEach(card => {
+            const select = card.querySelector('select');
+            if (!select) return;
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('#page-form');
-        console.log(' Formulář nalezen:', form);
+            const block = { type: select.value, columns: {} };
 
-        if (!form) return;
-
-        form.addEventListener('submit', function (e) {
-            //e.preventDefault(); //  zabráníme odeslání formuláře
-            console.log('2');
-            const blocks = [];
-
-            document.querySelectorAll('#json-blocks .card').forEach((card) => {
-                const block = {
-                    type: '',
-                    columns: {}
-                };
-
-                const select = card.querySelector('select');
-                block.type = select.value;
-
-                const inputs = card.querySelectorAll('input[type="text"]');
-                inputs.forEach(input => {
-                    const nameMatch = input.name.match(/\[columns]\[(.*?)\]/);
-                    if (nameMatch) {
-                        const key = nameMatch[1];
-                        block.columns[key] = input.value;
-                    }
-                });
-
-                blocks.push(block);
+            card.querySelectorAll('input[type="text"]').forEach(input => {
+                const m = input.name.match(/\[columns]\[(.*?)\]/);
+                if (m) block.columns[m[1]] = input.value;
             });
 
-            const jsonOutput = JSON.stringify(blocks, null, 2);
-            const contentTextarea = document.querySelector('textarea[name="content"]');
-            contentTextarea.value = jsonOutput;
-            contentTextarea.removeAttribute('disabled');
-
-            console.log('🧾 Co odesílám:', blocks);
-            console.log('📦 JSON string:', jsonOutput);
-
-            form.submit(); //  odešle formulář poté, co jsme zapsali JSON
+            if (block.type) blocks.push(block);
         });
+
+        if (!blocks.length) return; // další ochrana
+
+        contentTextarea.value = JSON.stringify(blocks, null, 2);
     });
+
+});
+</script>
+
+{{-- -------------------------------------------------- --}}
+{{-- OCHRANA PROTI [] V HTML REŽIMU --}}
+{{-- -------------------------------------------------- --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form = document.getElementById('page-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+
+        const mode = form.dataset.editorMode || 'html';
+        const textarea = document.querySelector('textarea[name="content"]');
+        if (!textarea) return;
+
+        const value = (textarea.value || '').trim();
+
+        if (mode === 'html' && value === '[]') {
+            e.preventDefault();
+            alert('Obsah byl přepsán na [] — uložení zastaveno.');
+        }
+    });
+
+});
 </script>

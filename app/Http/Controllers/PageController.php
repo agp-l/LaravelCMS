@@ -79,29 +79,43 @@ class PageController extends Controller
     }
 
     // 🔸 ADMIN – aktualizace stránky
-    public function update(Request $request, $id)
-    {
-        //dd($request->all());
+public function update(Request $request, $id)
+{
+    $page = Page::findOrFail($id);
 
-        $page = Page::findOrFail($id);
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'slug' => 'required|string|max:255|unique:pages,slug,' . $page->id,
+        'content' => 'nullable|string',
+        'published' => 'nullable',
+    ]);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:pages,slug,' . $page->id,
-            'content' => 'nullable|string',
-            'published' => 'nullable',
-        ]);
+    // Obsah bereme z requestu, ale chráníme se před tím,
+    // že se omylem uloží prázdné JSON bloky "[]"
+    // (typicky když se přepne režim / nespustí JS / nejsou bloky).
+    $content = $request->input('content', null);
 
-        $page->update([
-            'title' => $validated['title'],
-            'slug' => $validated['slug'],
-            //'content' => $validated['content'] ?? '',
-            'content' => $request->input('content', ''),
-            'published' => $request->has('published'),
-        ]);
+    if ($content !== null) {
+        $trim = trim($content);
 
-        return redirect('/admin/stranky')->with('success', 'Stránka byla upravena.');
+        // Pojistka proti smazání obsahu na []
+        if ($trim === '[]') {
+            $content = $page->content;
+        }
+    } else {
+        // Pokud content vůbec nepřišel, nebudeme ho přepisovat
+        $content = $page->content;
     }
+
+    $page->update([
+        'title' => $validated['title'],
+        'slug' => $validated['slug'],
+        'content' => $content,
+        'published' => $request->has('published'),
+    ]);
+
+    return redirect('/admin/stranky')->with('success', 'Stránka byla upravena.');
+}
 
     // 🔸 ADMIN – smazání stránky
     public function destroy($id)

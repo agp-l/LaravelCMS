@@ -1,10 +1,28 @@
 @extends($layout ?? 'layouts.default.app')
 
 @section('content')
+@php
+    $blocks = json_decode($page->content, true);
+
+    // Přísná detekce: zapneme blokový režim jen pokud content odpovídá
+    // našemu formátu: array bloků s klíči type + columns.
+    $isNoteJson = json_last_error() === JSON_ERROR_NONE;
+    $isJson = $isNoteJson
+        && is_array($blocks)
+        && isset($blocks[0])
+        && is_array($blocks[0])
+        && array_key_exists('type', $blocks[0])
+        && array_key_exists('columns', $blocks[0])
+        && is_array($blocks[0]['columns']);
+@endphp
+
 <div class="container my-5">
     <h1>Upravit stránku</h1>
 
-    <form action="{{ route('page.update', $page->id) }}"  id="page-form" method="POST">
+    <form action="{{ route('page.update', $page->id) }}"
+          id="page-form"
+          method="POST"
+          data-editor-mode="{{ $isJson ? 'blocks' : 'html' }}">
         @csrf
         @method('PUT')
 
@@ -18,11 +36,6 @@
             <input type="text" name="slug" id="slug" class="form-control" value="{{ old('slug', $page->slug) }}">
         </div>
 
-        @php
-            $blocks = json_decode($page->content, true);
-            $isJson = is_array($blocks);
-        @endphp
-
         @if ($isJson)
             <div id="json-blocks">
                 <label class="form-label">Bloky na stránce:</label>
@@ -32,22 +45,31 @@
                         <div class="mb-2">
                             <label class="form-label">Šablona</label>
                             <select name="json_blocks[{{ $index }}][type]" class="form-select">
-                                <option value="component11" {{ $block['type'] === 'component11' ? 'selected' : '' }}>component11</option>
-                                <option value="component12" {{ $block['type'] === 'component12' ? 'selected' : '' }}>component12</option>
+                                <option value="component11" {{ ($block['type'] ?? '') === 'component11' ? 'selected' : '' }}>component11</option>
+                                <option value="component12" {{ ($block['type'] ?? '') === 'component12' ? 'selected' : '' }}>component12</option>
                                 <!-- Přidej další šablony zde -->
                             </select>
                         </div>
 
-                        @foreach ($block['columns'] as $key => $value)
+                        @php
+                            $columns = isset($block['columns']) && is_array($block['columns']) ? $block['columns'] : [];
+                        @endphp
+
+                        @foreach ($columns as $key => $value)
                             <div class="mb-2">
                                 <label class="form-label">{{ $key }}</label>
-                                <input type="text" name="json_blocks[{{ $index }}][columns][{{ $key }}]" class="form-control" value="{{ $value }}">
+                                <input
+                                    type="text"
+                                    name="json_blocks[{{ $index }}][columns][{{ $key }}]"
+                                    class="form-control"
+                                    value="{{ $value }}"
+                                >
                             </div>
                         @endforeach
                     </div>
                 @endforeach
 
-                <!-- Starý obsah pro JSON musí být zkopírován do textarea -->
+                <!-- Sem se při submitu zapíše vygenerovaný JSON -->
                 <textarea name="content" id="json-content" class="form-control d-none" rows="6">{{ $page->content }}</textarea>
             </div>
         @else
@@ -63,7 +85,6 @@
         </div>
 
         <button type="submit" class="btn btn-success">Uložit změny</button>
-        
     </form>
 </div>
 @endsection
