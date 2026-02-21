@@ -231,3 +231,20 @@
     object-fit: cover;
 }
 </style>
+
+<style>
+    /* ===== Mobilní zarovnání textu ===== */
+@media (max-width: 767.98px) {
+
+ 
+
+      .lead {
+        font-size: 1rem !important;   /* standardní velikost textu */
+        font-weight: 400 !important;  /* zruší lehké zvýraznění */
+        line-height: 1.6;
+         justify-content: flex-start !important;
+    }
+
+
+    }
+</style>
