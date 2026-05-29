@@ -66,7 +66,7 @@
 
     /* Obecný styl pro hlavní navigační odkazy */
     .navbar-nav .nav-link {
-        color: rgb(44, 119, 231);
+        color: rgb(62, 189, 239);
         /* Bootstrap modrá */
     }
 
@@ -209,7 +209,7 @@
 
     .section-heading {
         font-weight: 700;
-        background: linear-gradient(120deg, #2563eb, #4f46e5);
+        background: linear-gradient(120deg, #11c7ec, #0fc4d8);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
@@ -247,4 +247,39 @@
 
 
     }
+</style>
+
+<style>
+/* Změna barvy pozadí */
+.bg-primary {
+    background-color: #0dcaf0 !important;
+}
+
+/* Změna barvy textu */
+.text-primary {
+    color: #0dcaf0 !important;
+}
+
+
+/* Základní stav tlačítka */
+.btn-primary {
+    background-color: #0dcaf0 !important;
+    border-color: #0dcaf0 !important;
+    color: #000 !important;
+}
+
+/* Stav při najetí myší (trochu tmavší info) */
+.btn-primary:hover {
+    background-color: #31d2f2 !important;
+    border-color: #25cff2 !important;
+    color: #000 !important;
+    
+    text-decoration: none; 
+}
+
+
+a {
+    color: #0dcaf0 !important;
+    
+}
 </style>
