@@ -119,7 +119,7 @@ class InstallationController extends Controller
         return view('install.admin');
     }
 
-    public function processAdmin(Request $request)
+public function processAdmin(Request $request)
     {
         $this->checkInstallationLock();
         
@@ -129,12 +129,35 @@ class InstallationController extends Controller
             'password' => 'required|string|min:8|confirmed', 
         ]);
 
+        // 1. Vytvoření administrátora
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
+        // 2. AUTOMATICKÝ OSEV VÝCHOZÍHO OBSAHU (PŘIDÁNO)
+        // Použijeme tvůj model Page pro vytvoření úvodní stránky se slugem 'home'
+        if (\Illuminate\Support\Facades\Schema::hasTable('pages')) {
+            \App\Models\Page::create([
+                'title' => 'Vítejte na Vašem novém webu!',
+                'slug' => 'home',
+                'published' => true,
+                'content' => '
+                    <div style="text-align: center; padding: 40px 20px; font-family: sans-serif;">
+                        <h1 style="color: #2d3748; font-size: 2.5rem; margin-bottom: 20px;">🎉 Instalace CMS proběhla úspěšně!</h1>
+                        <p style="color: #4a5568; font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px auto; line-height: 1.6;">
+                            Tento text vidíte proto, že systém automaticky vygeneroval výchozí úvodní stránku se slugem <strong>home</strong>. Nyní můžete přejít do administrace a začít tvořit svůj vlastní obsah.
+                        </p>
+                        <a href="/admin" style="display: inline-block; background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.2s;">
+                            👉 Vstoupit do administrace
+                        </a>
+                    </div>
+                '
+            ]);
+        }
+
+        // 3. Vygenerování ostrého šifrovacího klíče a uzamčení webu
         Artisan::call('key:generate', ['--force' => true]);
         file_put_contents(storage_path('installed'), 'Nainstalováno dne: ' . now());
 
