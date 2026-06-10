@@ -11,14 +11,47 @@ use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\LayoutOverrideController;
 use App\Http\Controllers\InstallationController;
 
-// Auth routy
-require __DIR__ . '/auth.php';
+/*
+|--------------------------------------------------------------------------
+| 1. INSTALÁTOR CMS (Nyní bezpečně jako první)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('install')->name('install.')->group(function () {
+    Route::get('/', [InstallationController::class, 'showDatabaseForm'])->name('database');
+    Route::post('/database', [InstallationController::class, 'processDatabase'])->name('database.process');
+    Route::get('/migrations', [InstallationController::class, 'runMigrations'])->name('migrations');
+    Route::get('/admin', [InstallationController::class, 'showAdminForm'])->name('admin');
+    Route::post('/admin', [InstallationController::class, 'processAdmin'])->name('admin.process');
+});
+
 
 /*
 |--------------------------------------------------------------------------
-| Veřejné routy s lokalizací (např. /cs/stranka/home)
+| 2. ZÁCHRANNÁ BRZDA PŘED INSTALACÍ (Chytré přesměrování)
 |--------------------------------------------------------------------------
 */
+// Pokud fyzický zámek na disku ještě neexistuje, chytíme jakoukoliv jinou 
+// adresu (včetně domovské stránky) a okamžitě ji přesměrujeme do instalátoru.
+if (!file_exists(storage_path('installed'))) {
+    Route::fallback(fn() => redirect('/install'));
+    
+    // Příkaz 'return' způsobí, že Laravel tento soubor přestane číst.
+    // Díky tomu se kód vůbec nedostane k routám níže a nespustí 
+    // předčasně žádný PageController ani databázové dotazy!
+    return; 
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| 3. BĚŽNÝ CHOD WEBU (Načte se pouze tehdy, když je už nainstalováno)
+|--------------------------------------------------------------------------
+*/
+
+// Auth routy
+require __DIR__ . '/auth.php';
+
+// Veřejné routy s lokalizací
 Route::group([
     'prefix' => LaravelLocalization::setLocale(),
     'middleware' => [
@@ -27,14 +60,10 @@ Route::group([
         \Mcamara\LaravelLocalization\Middleware\LocaleSessionRedirect::class,
     ]
 ], function () {
-    // Domovská stránka
     Route::get('/', [PageController::class, 'showBySlug'])->defaults('slug', 'home')->name('home');
-
-    // Veřejné stránky a články podle slugu
     Route::get('/stranka/{slug}', [PageController::class, 'showBySlug'])->name('page.show');
     Route::get('/clanek/{slug}', [ArticleController::class, 'showBySlug'])->name('article.show');
 
-    // Veřejný výpis článků a kategorií
     Route::prefix('clanky')->name('article.')->group(function () {
         Route::get('/', [ArticleController::class, 'publicIndex'])->name('publicIndex');
         Route::get('/kategorie/{category}', [ArticleController::class, 'publicCategory'])->name('byCategory');
@@ -48,13 +77,8 @@ Route::group([
     })->name('projects.index');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Správa Administračních routy (pouze pro přihlášené)
-|--------------------------------------------------------------------------
-*/
+// Administrace
 Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
-
     Route::get('/images', [ImageManagerController::class, 'index'])->name('images.index');
     Route::post('/images', [ImageManagerController::class, 'store'])->name('images.store');
     Route::delete('/images/{id}', [ImageManagerController::class, 'destroy'])->name('images.destroy');
@@ -121,40 +145,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
 
         return back();
     })->name('toggle.tinymce');
+});
 
-}); // <--- TADY CHYBĚLA UZAVÍRACÍ ZÁVORKA PRO ADMIN SKUPINU
-
-
-/*
-|--------------------------------------------------------------------------
-| INSTALÁTOR CMS (Nyní bezpečně venku a veřejný)
-|--------------------------------------------------------------------------
-*/
-Route::prefix('install')->name('install.')->group(function () {
-    
-    // 1. Krok: Zobrazení formuláře pro připojení k databázi
-    Route::get('/', [InstallationController::class, 'showDatabaseForm'])->name('database');
-
-    // 2. Krok: Zpracování odeslaného formuláře
-    Route::post('/database', [InstallationController::class, 'processDatabase'])->name('database.process');
-
-    // 3. Krok: Spuštění migrací
-    Route::get('/migrations', [InstallationController::class, 'runMigrations'])->name('migrations');
-    
-    // 4. Krok: Zobrazení formuláře pro prvního administrátora
-    Route::get('/admin', [InstallationController::class, 'showAdminForm'])->name('admin');
-
-    // 5. Krok: Zpracování a vytvoření administrátora (tato metoda rovnou provede zamčení instalátoru)
-    Route::post('/admin', [InstallationController::class, 'processAdmin'])->name('admin.process');
-    
-}); // <--- TADY CHYBĚLA UZAVÍRACÍ ZÁVORKA PRO INSTALL SKUPINU
-
-
-/*
-|--------------------------------------------------------------------------
-| Ostatní
-|--------------------------------------------------------------------------
-*/
+// Ostatní
 Route::fallback(function () {
     return response()->view('errors.404', [], 404);
 });

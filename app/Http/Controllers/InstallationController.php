@@ -7,41 +7,50 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class InstallationController extends Controller
 {
     /**
-     * Dvojitý zámek instalátoru - zavoláme na začátku každé veřejné metody
+     * VYLEPŠENÝ Dvojitý zámek instalátoru
      */
     private function checkInstallationLock()
     {
-        // 1. POJISTKA: Kontrola fyzického souboru na disku
+        // 1. Fyzický zámek na disku
         if (file_exists(storage_path('installed'))) {
             abort(403, 'CMS je již nainstalováno. Z bezpečnostních důvodů je instalátor uzamčen.');
         }
 
-        // 2. POJISTKA: Dynamická kontrola běžící databáze
+        // Pokud v systému chybí jakékoliv nastavení DB, nemáme co ověřovat, web 100% není nainstalovaný
+        if (!config('database.connections.mysql.database')) {
+            return;
+        }
+
+        // 2. Dynamický zámek v databázi
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
-                file_put_contents(storage_path('installed'), 'Automaticky uzamčeno dne: ' . now() . ' (Detekován funkční web)');
-                abort(403, 'CMS je již nainstalováno. Z bezpečnostních důvodů je instalátor uzamčen.');
+            // Zjišťujeme, zda existuje tabulka users A ZÁROVEŇ zda v ní je už nějaký uživatel.
+            // Díky tomu nás to nevyhodí po vytvoření prázdných tabulek v kroku 3!
+            if (Schema::hasTable('users')) {
+                if (DB::table('users')->count() > 0) {
+                    file_put_contents(storage_path('installed'), 'Automaticky uzamčeno dne: ' . now() . ' (Detekován funkční web)');
+                    abort(403, 'CMS je již nainstalováno. Z bezpečnostních důvodů je instalátor uzamčen.');
+                }
             }
         } catch (\Exception $e) {
-            // Pokud připojení selže nebo databáze neexistuje, je to v pořádku.
+            // Pokud spojení selže, je to u čisté instalace v pořádku.
         }
     }
 
     public function showDatabaseForm()
     {
-        $this->checkInstallationLock(); // ZÁMEK PŘIDÁN
+        $this->checkInstallationLock();
         return view('install.database');
     }
 
-public function processDatabase(Request $request)
+    public function processDatabase(Request $request)
     {
         $this->checkInstallationLock();
         
-        // 1. Validace - přidali jsme db_prefix (povolíme jen písmena, čísla a podtržítko)
         $validated = $request->validate([
             'db_host'     => 'required|string',
             'db_port'     => 'required|string',
@@ -51,7 +60,6 @@ public function processDatabase(Request $request)
             'db_prefix'   => 'nullable|string|regex:/^[a-zA-Z0-9_]+$/',
         ]);
 
-        // 2. Otestování spojení s databází včetně nového prefixu
         config(['database.connections.test_connection' => [
             'driver'    => 'mysql',
             'host'      => $validated['db_host'],
@@ -59,39 +67,45 @@ public function processDatabase(Request $request)
             'database'  => $validated['db_database'],
             'username'  => $validated['db_username'],
             'password'  => $validated['db_password'] ?? '',
-            'prefix'    => $validated['db_prefix'] ?? '', // <-- PŘIDÁNO SEM
+            'prefix'    => $validated['db_prefix'] ?? '',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
         ]]);
 
         try {
             DB::connection('test_connection')->getPdo();
+            
+            // Pojistka: Pokud uživatel zadá existující databázi a prefix, kde už web běží
+            if (Schema::connection('test_connection')->hasTable('users') && DB::connection('test_connection')->table('users')->count() > 0) {
+                return redirect()->back()->withInput()->withErrors(['database' => 'V této databázi pod tímto prefixem již existuje nainstalovaný systém. Zvolte jiný prefix tabulek (např. test_).']);
+            }
+            
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['database' => 'Nepodařilo se připojit k databázi. Zkontrolujte prosím údaje. Chyba: ' . $e->getMessage()]);
+                ->withErrors(['database' => 'Nepodařilo se připojit k databázi. Zkontrolujte údaje. Chyba: ' . $e->getMessage()]);
         }
 
-        // 3. Spojení je v pořádku -> zapíšeme údaje natvrdo do .env souboru
         $this->updateEnvFile('DB_CONNECTION', 'mysql');
         $this->updateEnvFile('DB_HOST', $validated['db_host']);
         $this->updateEnvFile('DB_PORT', $validated['db_port']);
         $this->updateEnvFile('DB_DATABASE', $validated['db_database']);
         $this->updateEnvFile('DB_USERNAME', $validated['db_username']);
         $this->updateEnvFile('DB_PASSWORD', $validated['db_password'] ?? '');
-        $this->updateEnvFile('DB_PREFIX', $validated['db_prefix'] ?? ''); // <-- PŘIDÁNO SEM ZÁPIS PREFIXU
+        $this->updateEnvFile('DB_PREFIX', $validated['db_prefix'] ?? '');
+
+        // Vyčistíme starou paměť, aby Laravel okamžitě viděl nové údaje z .env
+        Artisan::call('config:clear');
 
         return redirect()->route('install.migrations')->with('success', 'Databáze byla úspěšně připojena.');
     }
 
     public function runMigrations()
     {
-        $this->checkInstallationLock(); // ZÁMEK PŘIDÁN
+        $this->checkInstallationLock();
         
         try {
-            Artisan::call('migrate', [
-                '--force' => true
-            ]);
+            Artisan::call('migrate', ['--force' => true]);
             return redirect()->route('install.admin')->with('success', 'Databáze byla úspěšně vytvořena!');
         } catch (\Exception $e) {
             return redirect()->route('install.database')
@@ -101,13 +115,13 @@ public function processDatabase(Request $request)
 
     public function showAdminForm()
     {
-        $this->checkInstallationLock(); // ZÁMEK PŘIDÁN
+        $this->checkInstallationLock();
         return view('install.admin');
     }
 
     public function processAdmin(Request $request)
     {
-        $this->checkInstallationLock(); // ZÁMEK PŘIDÁN
+        $this->checkInstallationLock();
         
         $request->validate([
             'name' => 'required|string|max:255',
@@ -127,6 +141,9 @@ public function processDatabase(Request $request)
         return redirect('/')->with('success', 'Instalace byla úspěšně dokončena! Nyní se můžete přihlásit.');
     }
 
+    /**
+     * VYLEPŠENÝ PŘEPIS .ENV S HLÁŠENÍM CHYB
+     */
     private function updateEnvFile($key, $value)
     {
         $path = base_path('.env');
@@ -137,6 +154,12 @@ public function processDatabase(Request $request)
             } else {
                 touch($path); 
             }
+
+            $content = file_get_contents($path);
+            if (!str_contains($content, 'APP_KEY=')) {
+                $content .= "\nAPP_KEY=base64:uQ2vF3pM7ZkWx9Yb4tN1vC8xJzR5qW3eE4rT7yU8iI0=";
+                file_put_contents($path, $content);
+            }
         }
 
         $content = file_get_contents($path);
@@ -145,12 +168,16 @@ public function processDatabase(Request $request)
             $value = '"' . $value . '"';
         }
 
-        if (str_contains($content, "{$key}=")) {
+        // Spolehlivější nahrazení pomocí regulárního výrazu
+        if (preg_match("/^{$key}=/m", $content)) {
             $content = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $content);
         } else {
             $content .= "\n{$key}={$value}";
         }
 
-        file_put_contents($path, $content);
+        // POKUD ZÁPIS SELŽE, OKAMŽITĚ ZASTAVÍME INSTALACI A OZNÁMÍME TO!
+        if (file_put_contents($path, $content) === false) {
+            abort(500, "KRITICKÁ CHYBA: Systém nemá právo zapisovat do souboru .env. Změňte oprávnění souboru (CHMOD) přes FTP na 664 nebo 777.");
+        }
     }
 }
