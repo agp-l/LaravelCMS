@@ -1,7 +1,7 @@
 
    INFO  Preparing database.  
 
-  Creating migration table ............................................................................. 1.76ms DONE
+  Creating migration table ............................................................................. 1.77ms DONE
 
    INFO  Running migrations.  
 
@@ -32,4 +32,7 @@
   ⇂ create unique index "pages_slug_unique" on "pages" ("slug")  
   2026_06_10_174109_create_layout_overrides_table ..................................................................  
   ⇂ create table "layout_overrides" ("id" integer primary key autoincrement not null, "path_pattern" varchar not null, "layout" varchar not null, "created_at" datetime, "updated_at" datetime)  
+  2026_06_10_174646_create_articles_table ..........................................................................  
+  ⇂ create table "articles" ("id" integer primary key autoincrement not null, "title" varchar not null, "slug" varchar not null, "content" text, "published" tinyint(1) not null default '0', "category" varchar, "perex" text, "image" varchar, "created_at" datetime, "updated_at" datetime)  
+  ⇂ create unique index "articles_slug_unique" on "articles" ("slug")  
 
