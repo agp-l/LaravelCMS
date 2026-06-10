@@ -8,20 +8,22 @@ use App\Models\PageHistory;
 
 class PageController extends Controller
 {
-    // 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas)
+// 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas)
     public function showBySlug($slug)
     {
-        $page = Page::where('slug', $slug)->firstOrFail();
+        $page = Page::where('slug', $slug)
+                    ->where('published', true) // 👈 TADY JE TA OPRAVA
+                    ->firstOrFail();
     
         return view('pages.page-detail', ['page' => $page]);
     }
     
 
-    // 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
+// 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
     public function show()
     {
-        $page = Page::first();
-
+        // Najde první stránku, ale pouze z těch, které jsou veřejné
+        $page = Page::where('published', true)->first(); 
         if (!$page) {
             abort(404, 'Stránka nenalezena');
         }

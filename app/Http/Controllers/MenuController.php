@@ -94,6 +94,7 @@ class MenuController extends Controller
         return view('admin.menus.edit', compact('menu', 'menus'));
     }
 
+
     public function update(Request $request, $id)
     {
         $menu = Menu::findOrFail($id);
@@ -102,7 +103,7 @@ class MenuController extends Controller
             'label' => 'required|string|max:255',
             'type' => 'required|string',
             'url' => 'nullable|string|max:255',
-            'published' => 'boolean',
+            // published už validovat nemusíme, vyřešíme ho ručně
             'order' => 'nullable|integer',
             'parent_id' => 'nullable|exists:menus,id',
         ]);
@@ -114,6 +115,10 @@ class MenuController extends Controller
                 ? '/stranka/' . $slug
                 : '/clanek/' . $slug;
         }
+
+        // TADY JE OPRAVA: Přidáme published manuálně
+        // Vrací true (1), pokud checkbox zaškrtnut, jinak false (0)
+        $validated['published'] = $request->has('published');
 
         $menu->update($validated);
 
