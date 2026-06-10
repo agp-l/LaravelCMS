@@ -2,9 +2,9 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Počítač: db.dw141.webglobe.com
--- Vytvořeno: Pon 16. úno 2026, 10:48
--- Verze serveru: 8.0.44-35
+-- Počítač: dobrodruzi.cz
+-- Vytvořeno: Stř 10. čen 2026, 20:32
+-- Verze serveru: 8.0.45-36
 -- Verze PHP: 8.1.34
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Databáze: `dobrodruzicz5`
 --
-CREATE DATABASE IF NOT EXISTS `dobrodruzicz5` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `dobrodruzicz5`;
 
 -- --------------------------------------------------------
 
@@ -29,7 +27,6 @@ USE `dobrodruzicz5`;
 -- Struktura tabulky `articles`
 --
 
-DROP TABLE IF EXISTS `articles`;
 CREATE TABLE `articles` (
   `id` bigint UNSIGNED NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -46,26 +43,9 @@ CREATE TABLE `articles` (
 -- --------------------------------------------------------
 
 --
--- Struktura tabulky `bid_logs`
---
-
-DROP TABLE IF EXISTS `bid_logs`;
-CREATE TABLE `bid_logs` (
-  `id` bigint UNSIGNED NOT NULL,
-  `item_id` bigint UNSIGNED NOT NULL,
-  `attempted_price` decimal(10,2) NOT NULL,
-  `result` enum('ok','outbid','error') COLLATE utf8mb4_general_ci NOT NULL,
-  `message` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Struktura tabulky `cache`
 --
 
-DROP TABLE IF EXISTS `cache`;
 CREATE TABLE `cache` (
   `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `value` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -78,7 +58,6 @@ CREATE TABLE `cache` (
 -- Struktura tabulky `cache_locks`
 --
 
-DROP TABLE IF EXISTS `cache_locks`;
 CREATE TABLE `cache_locks` (
   `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `owner` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -91,7 +70,6 @@ CREATE TABLE `cache_locks` (
 -- Struktura tabulky `failed_jobs`
 --
 
-DROP TABLE IF EXISTS `failed_jobs`;
 CREATE TABLE `failed_jobs` (
   `id` bigint UNSIGNED NOT NULL,
   `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -108,7 +86,6 @@ CREATE TABLE `failed_jobs` (
 -- Struktura tabulky `image_managers`
 --
 
-DROP TABLE IF EXISTS `image_managers`;
 CREATE TABLE `image_managers` (
   `id` bigint UNSIGNED NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -124,7 +101,6 @@ CREATE TABLE `image_managers` (
 -- Struktura tabulky `jobs`
 --
 
-DROP TABLE IF EXISTS `jobs`;
 CREATE TABLE `jobs` (
   `id` bigint UNSIGNED NOT NULL,
   `queue` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -141,7 +117,6 @@ CREATE TABLE `jobs` (
 -- Struktura tabulky `job_batches`
 --
 
-DROP TABLE IF EXISTS `job_batches`;
 CREATE TABLE `job_batches` (
   `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -161,7 +136,6 @@ CREATE TABLE `job_batches` (
 -- Struktura tabulky `layout_overrides`
 --
 
-DROP TABLE IF EXISTS `layout_overrides`;
 CREATE TABLE `layout_overrides` (
   `id` bigint UNSIGNED NOT NULL,
   `path_pattern` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -176,7 +150,6 @@ CREATE TABLE `layout_overrides` (
 -- Struktura tabulky `media`
 --
 
-DROP TABLE IF EXISTS `media`;
 CREATE TABLE `media` (
   `id` bigint UNSIGNED NOT NULL,
   `model_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -204,7 +177,6 @@ CREATE TABLE `media` (
 -- Struktura tabulky `menus`
 --
 
-DROP TABLE IF EXISTS `menus`;
 CREATE TABLE `menus` (
   `id` bigint UNSIGNED NOT NULL,
   `label` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -223,7 +195,6 @@ CREATE TABLE `menus` (
 -- Struktura tabulky `migrations`
 --
 
-DROP TABLE IF EXISTS `migrations`;
 CREATE TABLE `migrations` (
   `id` int UNSIGNED NOT NULL,
   `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -236,7 +207,6 @@ CREATE TABLE `migrations` (
 -- Struktura tabulky `pages`
 --
 
-DROP TABLE IF EXISTS `pages`;
 CREATE TABLE `pages` (
   `id` bigint UNSIGNED NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -250,10 +220,26 @@ CREATE TABLE `pages` (
 -- --------------------------------------------------------
 
 --
+-- Struktura tabulky `page_histories`
+--
+
+CREATE TABLE `page_histories` (
+  `id` bigint UNSIGNED NOT NULL,
+  `page_id` bigint UNSIGNED NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` longtext COLLATE utf8mb4_unicode_ci,
+  `published` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Struktura tabulky `password_reset_tokens`
 --
 
-DROP TABLE IF EXISTS `password_reset_tokens`;
 CREATE TABLE `password_reset_tokens` (
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -266,7 +252,6 @@ CREATE TABLE `password_reset_tokens` (
 -- Struktura tabulky `sessions`
 --
 
-DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE `sessions` (
   `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
@@ -282,7 +267,6 @@ CREATE TABLE `sessions` (
 -- Struktura tabulky `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` bigint UNSIGNED NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -294,27 +278,6 @@ CREATE TABLE `users` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
-
---
--- Struktura tabulky `watched_items`
---
-
-DROP TABLE IF EXISTS `watched_items`;
-CREATE TABLE `watched_items` (
-  `id` bigint UNSIGNED NOT NULL,
-  `title` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `url` text COLLATE utf8mb4_general_ci NOT NULL,
-  `max_bid` decimal(10,2) NOT NULL,
-  `bid_increment` decimal(10,2) DEFAULT NULL,
-  `ends_at` datetime NOT NULL,
-  `last_price` decimal(10,2) DEFAULT NULL,
-  `is_high_bidder` tinyint(1) DEFAULT '0',
-  `status` enum('watching','won','lost','ended','paused') COLLATE utf8mb4_general_ci DEFAULT 'watching',
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 --
 -- Indexy pro exportované tabulky
 --
@@ -325,13 +288,6 @@ CREATE TABLE `watched_items` (
 ALTER TABLE `articles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `articles_slug_unique` (`slug`);
-
---
--- Indexy pro tabulku `bid_logs`
---
-ALTER TABLE `bid_logs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `item_id` (`item_id`);
 
 --
 -- Indexy pro tabulku `cache`
@@ -405,6 +361,13 @@ ALTER TABLE `pages`
   ADD UNIQUE KEY `pages_slug_unique` (`slug`);
 
 --
+-- Indexy pro tabulku `page_histories`
+--
+ALTER TABLE `page_histories`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `page_id` (`page_id`);
+
+--
 -- Indexy pro tabulku `password_reset_tokens`
 --
 ALTER TABLE `password_reset_tokens`
@@ -426,12 +389,6 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `users_email_unique` (`email`);
 
 --
--- Indexy pro tabulku `watched_items`
---
-ALTER TABLE `watched_items`
-  ADD PRIMARY KEY (`id`);
-
---
 -- AUTO_INCREMENT pro tabulky
 --
 
@@ -439,12 +396,6 @@ ALTER TABLE `watched_items`
 -- AUTO_INCREMENT pro tabulku `articles`
 --
 ALTER TABLE `articles`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pro tabulku `bid_logs`
---
-ALTER TABLE `bid_logs`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -496,10 +447,26 @@ ALTER TABLE `pages`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pro tabulku `page_histories`
+--
+ALTER TABLE `page_histories`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pro tabulku `users`
 --
 ALTER TABLE `users`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- Omezení pro exportované tabulky
+--
+
+--
+-- Omezení pro tabulku `page_histories`
+--
+ALTER TABLE `page_histories`
+  ADD CONSTRAINT `page_histories_ibfk_1` FOREIGN KEY (`page_id`) REFERENCES `pages` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

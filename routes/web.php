@@ -9,9 +9,7 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\LayoutOverrideController;
-
-
-
+use App\Http\Controllers\InstallationController;
 
 // Auth routy
 require __DIR__ . '/auth.php';
@@ -27,7 +25,6 @@ Route::group([
         \Mcamara\LaravelLocalization\Middleware\LaravelLocalizationRedirectFilter::class,
         \Mcamara\LaravelLocalization\Middleware\LaravelLocalizationViewPath::class,
         \Mcamara\LaravelLocalization\Middleware\LocaleSessionRedirect::class,
-
     ]
 ], function () {
     // Domovská stránka
@@ -46,82 +43,34 @@ Route::group([
     Route::get('/galerie/all', [ImageManagerController::class, 'showAll'])->name('gallery.all');
     Route::get('/galerie/{group}', [ImageManagerController::class, 'showGroup'])->name('gallery.group');
 
-
     Route::get('/projekty', function () {
         return view('projects.index');
     })->name('projects.index');
-    
 });
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
 | Správa Administračních routy (pouze pro přihlášené)
-| Administrace (pouze pro přihlášené)
 |--------------------------------------------------------------------------
 */
-
-
 Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
-
-    /*
-    |--------------------------------------------------------------------------
-    | Images
-    |--------------------------------------------------------------------------
-    */
 
     Route::get('/images', [ImageManagerController::class, 'index'])->name('images.index');
     Route::post('/images', [ImageManagerController::class, 'store'])->name('images.store');
     Route::delete('/images/{id}', [ImageManagerController::class, 'destroy'])->name('images.destroy');
 
-
-
-
     Route::post('/menu/reorder', [MenuController::class, 'reorder'])->name('menu.reorder');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin dashboard
-    |--------------------------------------------------------------------------
-    */
     Route::get('/', fn() => view('admin.master'))->name('dashboard');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Login
-    |--------------------------------------------------------------------------
-    */
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('admin.register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('admin.store');
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Layout override přehled
-    |--------------------------------------------------------------------------
-    */
 
     Route::get('/layout-overrides', [LayoutOverrideController::class, 'index'])->name('admin.layout-overrides.index');
     Route::get('/layout-overrides/create', [LayoutOverrideController::class, 'create'])->name('admin.layout-overrides.create');
     Route::post('/layout-overrides', [LayoutOverrideController::class, 'store'])->name('admin.layout-overrides.store');
     Route::delete('/layout-overrides/{layoutOverride}', [LayoutOverrideController::class, 'destroy'])->name('admin.layout-overrides.destroy');
 
-    // Zkrácený zápis
-    //Route::resource('layout-overrides', \App\Http\Controllers\Admin\LayoutOverrideController::class)->except(['edit', 'update', 'show']);
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Správa článků
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('clanky')->name('article.')->group(function () {
         Route::get('/', [ArticleController::class, 'adminIndex'])->name('index');
         Route::get('/{id}/edit', [ArticleController::class, 'edit'])->name('edit');
@@ -133,11 +82,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::post('/vytvorit', [ArticleController::class, 'store'])->name('store');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Správa statických stránek
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('stranky')->name('page.')->group(function () {
         Route::get('/', [PageController::class, 'index'])->name('index');
         Route::get('/{id}/edit', [PageController::class, 'edit'])->name('edit');
@@ -150,11 +94,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::post('/vytvorit', [PageController::class, 'store'])->name('store');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Správa menu
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('menu')->name('menu.')->group(function () {
         Route::get('/', [MenuController::class, 'index'])->name('index');
         Route::get('/index', [MenuController::class, 'index'])->name('index');
@@ -167,23 +106,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::get('/{id}/nahled', [MenuController::class, 'preview'])->name('preview');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Profil uživatele
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'show'])->name('show');        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::get('/', [ProfileController::class, 'show'])->name('show');        
+        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
         Route::get('/delete', [ProfileController::class, 'delete'])->name('delete');
         Route::patch('/update', [ProfileController::class, 'update'])->name('update');
         Route::delete('/logout', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Přepínač TinyMCE editoru
-    |--------------------------------------------------------------------------
-    */
     Route::get('/toggle-editor', function () {
         session()->has('tinymce_disabled')
             ? session()->forget('tinymce_disabled')
@@ -191,10 +121,40 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
 
         return back();
     })->name('toggle.tinymce');
-});
+
+}); // <--- TADY CHYBĚLA UZAVÍRACÍ ZÁVORKA PRO ADMIN SKUPINU
 
 
+/*
+|--------------------------------------------------------------------------
+| INSTALÁTOR CMS (Nyní bezpečně venku a veřejný)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('install')->name('install.')->group(function () {
+    
+    // 1. Krok: Zobrazení formuláře pro připojení k databázi
+    Route::get('/', [InstallationController::class, 'showDatabaseForm'])->name('database');
 
+    // 2. Krok: Zpracování odeslaného formuláře
+    Route::post('/database', [InstallationController::class, 'processDatabase'])->name('database.process');
+
+    // 3. Krok: Spuštění migrací
+    Route::get('/migrations', [InstallationController::class, 'runMigrations'])->name('migrations');
+    
+    // 4. Krok: Zobrazení formuláře pro prvního administrátora
+    Route::get('/admin', [InstallationController::class, 'showAdminForm'])->name('admin');
+
+    // 5. Krok: Zpracování a vytvoření administrátora (tato metoda rovnou provede zamčení instalátoru)
+    Route::post('/admin', [InstallationController::class, 'processAdmin'])->name('admin.process');
+    
+}); // <--- TADY CHYBĚLA UZAVÍRACÍ ZÁVORKA PRO INSTALL SKUPINU
+
+
+/*
+|--------------------------------------------------------------------------
+| Ostatní
+|--------------------------------------------------------------------------
+*/
 Route::fallback(function () {
     return response()->view('errors.404', [], 404);
 });

@@ -9,7 +9,8 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Schema; // Přidáno pro kontrolu tabulek
+use Illuminate\Support\Str; // Přidáno pro kontrolu názvu šablony
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,46 +27,53 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
-        // Společný view composer
+        // Společný view composer pro všechny šablony
         view()->composer('*', function ($view) {
-            // 💡 MENU – důležité zachovat
-            $menus = Menu::where('published', true)
-                ->orderBy('order')
-                ->get();
-            $menuTree = buildMenuTree($menus);
-            $view->with('menuTree', $menuTree);
-
-            // 💡 AKTUÁLNÍ cesta a route
-            $routeName = Route::currentRouteName();
-            $requestPath = request()->path(); // např. cs/clanek/xyz
-
-            // 💡 Výchozí layout (můžeš číst z .env nebo configu)
-            $layout = config('view.default_layout', 'layouts.default.app');
-
-            // 💡 NEJPRVE: zkus najít výjimku v databázi
-            $overrides = DB::table('layout_overrides')->get();
-
             
-           
-        foreach ($overrides as $override) {
-                // Odstraníme případné lomítko na začátku pro jistotu
-                $pattern = ltrim($override->path_pattern, '/');
+            // 1. ZÁCHRANNÁ SÍŤ: Defaultní hodnoty (zabrání pádu, pokud ještě není databáze)
+            $view->with('menuTree', collect());
+            $layout = config('view.default_layout', 'layouts.default.app');
+            $view->with('layout', $layout);
 
-                // Kontrola: 
-                // 1. request()->is($pattern) -> pro případ cesty bez jazyka (např. "o-mne")
-                // 2. request()->is('*/' . $pattern) -> pro jakýkoliv jazykový prefix (např. "cs/o-mne")
-                if (request()->is($pattern) || request()->is('*/' . $pattern)) {
-                    $layout = $override->layout;
-                    break;
-                }
+            // 2. POJISTKA PRO INSTALACI: Pokud načítáme instalační stránky, tady skončíme
+            if (Str::startsWith($view->getName(), 'install.')) {
+                return;
             }
 
-            $view->with('layout', $layout);
+            // 3. REÁLNÝ KÓD: Pokus o načtení dat z databáze
+            try {
+                // A) Pokus o načtení MENU
+                if (Schema::hasTable('menus')) {
+                    $menus = Menu::where('published', true)
+                        ->orderBy('order')
+                        ->get();
+                        
+                    // Využijeme funkci buildMenuTree definovanou níže ve třídě
+                    $menuTree = $this->buildMenuTree($menus);
+                    $view->with('menuTree', $menuTree);
+                }
+
+                // B) Pokus o načtení LAYOUT OVERRIDES (výjimek v rozvržení)
+                if (Schema::hasTable('layout_overrides')) {
+                    $overrides = DB::table('layout_overrides')->get();
+                    
+                    foreach ($overrides as $override) {
+                        $pattern = ltrim($override->path_pattern, '/');
+
+                        if (request()->is($pattern) || request()->is('*/' . $pattern)) {
+                            $view->with('layout', $override->layout);
+                            break;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Pokud databáze nekomunikuje, chytí se chyba zde.
+                // Web nespadne, protože díky bodu 1 už šablony dostaly prázdné menu a defaultní layout.
+            }
         });
 
+        // Jazykový přepínač
         View::composer(['partials.language-switch', 'mizzle.language-switch'], function ($view) {
-
             $languageLinks = [];
 
             foreach (LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {
@@ -79,18 +87,22 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('languageLinks', $languageLinks);
         });
+
         // Tohle přidá Bootstrap 5 vzhled pro stránkování
         Paginator::useBootstrapFive();
     }
 
-
-    function buildMenuTree($items, $parentId = null)
+    /**
+     * Pomocná funkce pro sestavení stromového menu
+     */
+    private function buildMenuTree($items, $parentId = null)
     {
         $branch = [];
 
         foreach ($items as $item) {
             if ($item->parent_id == $parentId) {
-                $children = buildMenuTree($items, $item->id);
+                // Rekurzivní volání přes $this->
+                $children = $this->buildMenuTree($items, $item->id);
                 if ($children) {
                     $item->children = $children;
                 }
@@ -100,6 +112,4 @@ class AppServiceProvider extends ServiceProvider
 
         return $branch;
     }
-
 }
-
