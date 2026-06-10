@@ -7,7 +7,7 @@
 
 @section('content')
 
-    <section class="page my-5">
+    <section class="page my-0">
 
             {{-- Tlačítka pro přihlášeného uživatele --}}
             @auth
@@ -29,7 +29,7 @@
 
 
         {{-- Plná šířka bez kontejneru --}}
-        <div class="px-0" style="text-align: justify; text-justify: inter-character;">
+       
         <!--<h1 class="display-6 fw-bold text-center mb-2">{{ $page->title }}</h1>-->
 
 
@@ -60,7 +60,7 @@
 
 
 
-        </div>
+    
     </section>
 
 @endsection

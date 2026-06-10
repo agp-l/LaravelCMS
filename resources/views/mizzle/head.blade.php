@@ -24,7 +24,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
 
 <!-- Ikony z vlastního adresáře -->
-<link rel="stylesheet" href="{{ asset('/iconpro/css/all.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/fontawesome.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/solid.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/regular.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/brands.css') }}">
 
 <!-- Mizzle šablona -->
 <link rel="stylesheet" href="/template/mizzle/css/swiper-bundle.min.css" media="screen">
