@@ -15,3 +15,8 @@ class Page extends Model
         'published',
     ];
 }
+
+public function histories()
+{
+    return $this->hasMany(PageHistory::class, 'page_id')->orderBy('created_at', 'desc');
+}

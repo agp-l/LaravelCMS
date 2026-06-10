@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Page;
 use Illuminate\Http\Request;
+use App\Models\PageHistory;
 
 class PageController extends Controller
 {
@@ -70,18 +71,49 @@ class PageController extends Controller
         return redirect()->route('page.index')->with('success', 'Stránka byla vytvořena.');
     }
 
-    // 🔸 ADMIN – editace stránky
+// 🔸 ADMIN – editace stránky
     public function edit($id)
     {
         $page = Page::findOrFail($id);
 
-        return view('admin.pages.edit', compact('page'));
+        // Načteme všechny historické verze pro tuto stránku seřazené od nejnovější po nejstarší
+        $histories = \App\Models\PageHistory::where('page_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Pokud uživatel v adrese poslal konkrétní verzi (např. ?history_id=5)
+        if (request()->has('history_id')) {
+            $history = \App\Models\PageHistory::where('page_id', $id)
+                ->findOrFail(request()->query('history_id'));
+            
+            // Dočasně přepíšeme data v objektu $page daty ze staré zálohy
+            $page->title = $history->title;
+            $page->slug = $history->slug;
+            $page->content = $history->content;
+            $page->published = $history->published;
+            
+            // Přidáme pomocné značky, abychom v šabloně poznali, že prohlížíme historii
+            $page->is_history_preview = true;
+            $page->history_date = $history->created_at;
+        }
+
+        return view('admin.pages.edit', compact('page', 'histories'));
     }
 
-    // 🔸 ADMIN – aktualizace stránky
+
+// 🔸 ADMIN – aktualizace stránky
 public function update(Request $request, $id)
 {
     $page = Page::findOrFail($id);
+
+    // ZÁLOHA: Než stránku přepíšeme novými daty, uložíme její současný stav do historie
+    PageHistory::create([
+        'page_id'   => $page->id,
+        'title'     => $page->title,
+        'slug'      => $page->slug,
+        'content'   => $page->content,
+        'published' => $page->published,
+    ]);
 
     $validated = $request->validate([
         'title' => 'required|string|max:255',
@@ -90,20 +122,15 @@ public function update(Request $request, $id)
         'published' => 'nullable',
     ]);
 
-    // Obsah bereme z requestu, ale chráníme se před tím,
-    // že se omylem uloží prázdné JSON bloky "[]"
-    // (typicky když se přepne režim / nespustí JS / nejsou bloky).
     $content = $request->input('content', null);
 
     if ($content !== null) {
         $trim = trim($content);
 
-        // Pojistka proti smazání obsahu na []
         if ($trim === '[]') {
             $content = $page->content;
         }
     } else {
-        // Pokud content vůbec nepřišel, nebudeme ho přepisovat
         $content = $page->content;
     }
 
@@ -114,7 +141,7 @@ public function update(Request $request, $id)
         'published' => $request->has('published'),
     ]);
 
-    return redirect('/admin/stranky')->with('success', 'Stránka byla upravena.');
+    return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze byla zálohována.');
 }
 
     // 🔸 ADMIN – smazání stránky
