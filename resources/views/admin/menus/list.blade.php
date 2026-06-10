@@ -7,7 +7,7 @@
 
 <div class="container my-5">
 
-    <h1><i class="fad fa-bars"></i> Navigace – přehled</h1>
+    <h1><i class="fad fa-bars"></i> Navigace – přehled bez JS</h1>
 
     <a href="{{ route('menu.create') }}" class="btn btn-success mb-3">
         <i class="fad fa-plus-square"></i> Nový odkaz

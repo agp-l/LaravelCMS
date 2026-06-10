@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="{{ asset('font/css/solid.css') }}">
 <link rel="stylesheet" href="{{ asset('font/css/regular.css') }}">
 <link rel="stylesheet" href="{{ asset('font/css/brands.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/duotone.css') }}">
+
 <!-- Bootstrap 5 CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 

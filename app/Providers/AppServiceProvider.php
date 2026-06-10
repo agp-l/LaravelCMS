@@ -46,33 +46,23 @@ class AppServiceProvider extends ServiceProvider
             // 💡 NEJPRVE: zkus najít výjimku v databázi
             $overrides = DB::table('layout_overrides')->get();
 
-            foreach ($overrides as $override) {
-                if (request()->is($override->path_pattern)) {
+            
+           
+        foreach ($overrides as $override) {
+                // Odstraníme případné lomítko na začátku pro jistotu
+                $pattern = ltrim($override->path_pattern, '/');
+
+                // Kontrola: 
+                // 1. request()->is($pattern) -> pro případ cesty bez jazyka (např. "o-mne")
+                // 2. request()->is('*/' . $pattern) -> pro jakýkoliv jazykový prefix (např. "cs/o-mne")
+                if (request()->is($pattern) || request()->is('*/' . $pattern)) {
                     $layout = $override->layout;
                     break;
                 }
             }
 
-            // 💡 Potom můžeš přidat hardcodované výjimky (přepisuje DB, pokud chceš)
-            /*
-            if ($routeName === 'page.show') {
-                $layout = 'layouts.mizzle.app';
-            }
-
-            if ($routeName === 'article.publicIndex.show') {
-                $layout = 'layouts.default.app';
-            }
-
-            if (request()->is('cs/clanek/manifest-svobody-uceni')) {
-                $layout = 'layouts.mizzle.app';
-            }
-                */
-
-            // 💡 Předání do všech views
             $view->with('layout', $layout);
         });
-
-
 
         View::composer(['partials.language-switch', 'mizzle.language-switch'], function ($view) {
 

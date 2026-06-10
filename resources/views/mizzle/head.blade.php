@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="{{ asset('font/css/solid.css') }}">
 <link rel="stylesheet" href="{{ asset('font/css/regular.css') }}">
 <link rel="stylesheet" href="{{ asset('font/css/brands.css') }}">
+<link rel="stylesheet" href="{{ asset('font/css/duotone.css') }}">
 
 <!-- Mizzle šablona -->
 <link rel="stylesheet" href="/template/mizzle/css/swiper-bundle.min.css" media="screen">

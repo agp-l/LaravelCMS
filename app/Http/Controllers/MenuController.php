@@ -131,11 +131,23 @@ class MenuController extends Controller
 
     public function reorder(Request $request)
     {
-        $data = json_decode($request->input('order_data'), true);
+        // Přidali jsme výchozí hodnotu '[]' pro případ, že klíč v requestu chybí,
+        // a operátor ?? [] pro případ, že json_decode vrátí null.
+        $data = json_decode($request->input('order_data', '[]'), true) ?? [];
+
+        // Pokud jsou data prázdná, nebudeme spouštět foreach a rovnou přesměrujeme zpět
+        if (empty($data)) {
+            return redirect()->route('menu.index')->with('success', 'Menu bylo aktualizováno.');
+        }
 
         foreach ($data as $item) {
+            // Pojistka: Pokud by položka neměla ID, přeskočíme ji, ať kód nespadne
+            if (!isset($item['id'])) {
+                continue;
+            }
+
             $id = (int) $item['id'];
-            $order = (int) $item['order'];
+            $order = (int) ($item['order'] ?? 0);
             $parentId = $item['parent_id'] ?? null;
             $parentId = $parentId === null || $parentId === 'null' ? null : (int) $parentId;
 
@@ -147,7 +159,6 @@ class MenuController extends Controller
 
         return redirect()->route('menu.index')->with('success', 'Pořadí bylo uloženo.');
     }
-
 
 
 
