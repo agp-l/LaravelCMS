@@ -5,10 +5,13 @@
 </head>
 <body>
 
-    @include('partials.navbar')
-    
-    {{-- Zde se dynamicky vloží hlavička podle toho, co řekne konkrétní stránka --}}
-    @yield('header')
+  @include('partials.navbar')
+
+    @hasSection('header')
+        @yield('header')
+    @else
+        @include('partials.carousel')
+    @endif
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

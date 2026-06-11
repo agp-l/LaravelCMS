@@ -139,9 +139,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     });
 
     Route::get('/toggle-editor', function () {
-        session()->has('tinymce_disabled')
-            ? session()->forget('tinymce_disabled')
-            : session(['tinymce_disabled' => true]);
+        session()->has('tinymce_enabled')
+            ? session()->forget('tinymce_enabled')
+            : session(['tinymce_enabled' => true]);
 
         return back();
     })->name('toggle.tinymce');

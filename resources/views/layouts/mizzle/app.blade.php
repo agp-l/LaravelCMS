@@ -7,9 +7,14 @@
 
 
 
-    @include('mizzle.navbar')
+   @include('mizzle.navbar')
 
+    {{-- Pokud stránka pošle svou hlavičku, vypíšeme ji. Jinak dáme defaultní carousel. --}}
+    @hasSection('header')
         @yield('header')
+    @else
+        @include('mizzle.carousel')
+    @endif
 
 
     @if (session('success'))
