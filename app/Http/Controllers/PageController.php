@@ -166,7 +166,18 @@ class PageController extends Controller
             'published' => $request->has('published'),
         ]);
 
-        return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze byla zálohována.');
+        // 1. Pokud stránka není publikovaná, veřejný web by hodil chybu 404. Vrátíme uživatele do adminu.
+        if (!$page->published) {
+            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena (je skrytá) a stará verze byla zálohována.');
+        }
+
+        // 2. Pokud je to hlavní domovská stránka (slug: home), přesměrujeme na hlavní index weby
+        if ($page->slug === 'home') {
+            return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
+        }
+
+        // 3. V ostatních případech přesměrujeme na konkrétní veřejnou sub-stránku
+        return redirect()->route('page.show', ['slug' => $page->slug])->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
     }
 
     // 🔸 ADMIN – smazání stránky
