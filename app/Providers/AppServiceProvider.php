@@ -9,67 +9,68 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema; // Přidáno pro kontrolu tabulek
-use Illuminate\Support\Str; // Přidáno pro kontrolu názvu šablony
+use Illuminate\Support\Facades\Schema; 
+use Illuminate\Support\Str; 
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot()
     {
         // Společný view composer pro všechny šablony
         view()->composer('*', function ($view) {
             
-            // 1. ZÁCHRANNÁ SÍŤ: Defaultní hodnoty (zabrání pádu, pokud ještě není databáze)
-            $view->with('menuTree', collect());
-            $layout = config('view.default_layout', 'layouts.default.app');
-            $view->with('layout', $layout);
+            // ✨ STATICKÁ PAMĚŤ (TADY JE TA KOUZELNÁ OPRAVA)
+            // Zabráníme tomu, aby se databáze ptala na stejnou věc pro každý @include
+            static $sharedData = null;
 
-            // 2. POJISTKA PRO INSTALACI: Pokud načítáme instalační stránky, tady skončíme
-            if (Str::startsWith($view->getName(), 'install.')) {
-                return;
-            }
+            if ($sharedData === null) {
+                
+                // 1. ZÁCHRANNÁ SÍŤ: Defaultní hodnoty
+                $sharedData = [
+                    'menuTree' => collect(),
+                    'layout'   => config('view.default_layout', 'layouts.default.app')
+                ];
 
-            // 3. REÁLNÝ KÓD: Pokus o načtení dat z databáze
-            try {
-                // A) Pokus o načtení MENU
-                if (Schema::hasTable('menus')) {
-                    $menus = Menu::where('published', true)
-                        ->orderBy('order')
-                        ->get();
-                        
-                    // Využijeme funkci buildMenuTree definovanou níže ve třídě
-                    $menuTree = $this->buildMenuTree($menus);
-                    $view->with('menuTree', $menuTree);
-                }
-
-                // B) Pokus o načtení LAYOUT OVERRIDES (výjimek v rozvržení)
-                if (Schema::hasTable('layout_overrides')) {
-                    $overrides = DB::table('layout_overrides')->get();
+                // 2. POJISTKA PRO INSTALACI
+                if (!Str::startsWith($view->getName(), 'install.')) {
                     
-                    foreach ($overrides as $override) {
-                        $pattern = ltrim($override->path_pattern, '/');
-
-                        if (request()->is($pattern) || request()->is('*/' . $pattern)) {
-                            $view->with('layout', $override->layout);
-                            break;
+                    // 3. REÁLNÝ KÓD: Pokus o načtení dat z databáze
+                    try {
+                        // A) Pokus o načtení MENU
+                        if (Schema::hasTable('menus')) {
+                            $menus = Menu::where('published', true)
+                                ->orderBy('order')
+                                ->get();
+                                
+                            $sharedData['menuTree'] = $this->buildMenuTree($menus);
                         }
+
+                         // B) Načtení GLOBÁLNÍHO vzhledu celého webu z existující tabulky
+                        if (Schema::hasTable('layout_overrides')) {
+                            // Hledáme záznam s cestou '*', který nyní funguje jako globální nastavení
+                            $activeTheme = DB::table('layout_overrides')
+                                ->where('path_pattern', '*')
+                                ->value('layout');
+                            
+                            // Pokud jsme ho našli, přepíšeme jím ten výchozí
+                            if ($activeTheme) {
+                                $sharedData['layout'] = $activeTheme;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // Tiché zachycení chyby - použijí se defaultní hodnoty v $sharedData
                     }
                 }
-            } catch (\Exception $e) {
-                // Pokud databáze nekomunikuje, chytí se chyba zde.
-                // Web nespadne, protože díky bodu 1 už šablony dostaly prázdné menu a defaultní layout.
             }
+
+            // Pošleme data z naší uzamčené paměti do aktuální šablony
+            $view->with('menuTree', $sharedData['menuTree']);
+            $view->with('layout', $sharedData['layout']);
         });
 
         // Jazykový přepínač
@@ -88,7 +89,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('languageLinks', $languageLinks);
         });
 
-        // Tohle přidá Bootstrap 5 vzhled pro stránkování
+        // Bootstrap 5 vzhled pro stránkování
         Paginator::useBootstrapFive();
     }
 
@@ -101,7 +102,6 @@ class AppServiceProvider extends ServiceProvider
 
         foreach ($items as $item) {
             if ($item->parent_id == $parentId) {
-                // Rekurzivní volání přes $this->
                 $children = $this->buildMenuTree($items, $item->id);
                 if ($children) {
                     $item->children = $children;

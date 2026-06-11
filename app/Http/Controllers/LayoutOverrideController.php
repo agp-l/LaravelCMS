@@ -1,41 +1,39 @@
 <?php
-// app/Http/Controllers/LayoutOverrideController.php
+
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\LayoutOverride;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 
 class LayoutOverrideController extends Controller
 {
+    // Zobrazí stránku s nastavením tématu
     public function index()
     {
-        $overrides = LayoutOverride::all();
-        return view('admin.layout-overrides.index', compact('overrides'));
+        // Najdeme, jaké téma je aktuálně nastaveno (pokud žádné, vrátí null)
+        $currentTheme = DB::table('layout_overrides')->where('path_pattern', '*')->value('layout');
+
+        return view('admin.layout-overrides.index', compact('currentTheme'));
     }
 
-    public function create()
-    {
-        return view('admin.layout-overrides.create');
-    }
-
+    // Uloží nové globální téma
     public function store(Request $request)
     {
         $request->validate([
-            'path_pattern' => 'required|string',
-            'layout' => 'required|string',
+            'layout' => 'required|string|max:255',
         ]);
 
-        LayoutOverride::create($request->only(['path_pattern', 'layout']));
+        // updateOrInsert najde záznam s hvězdičkou a přepíše ho. Pokud neexistuje, vytvoří ho.
+        DB::table('layout_overrides')->updateOrInsert(
+            ['path_pattern' => '*'],
+            ['layout' => $request->input('layout')]
+        );
 
-        return redirect()->route('admin.layout-overrides.index')->with('success', 'Výjimka byla uložena.');
-    }
+        // Okamžitě smažeme mezipaměť šablon, aby se nový vzhled propsal na web
+        Artisan::call('view:clear');
 
-    public function destroy(LayoutOverride $layoutOverride)
-    {
-        $layoutOverride->delete();
-
-        return redirect()->route('admin.layout-overrides.index')->with('success', 'Výjimka byla smazána.');
+        return redirect()->route('admin.layout-overrides.index')->with('success', 'Globální vzhled webu byl úspěšně změněn!');
     }
 }
-
