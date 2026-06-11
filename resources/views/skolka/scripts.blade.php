@@ -210,3 +210,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Najdeme všechna tlačítka s třídou 'copy-btn'
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    // 2. Každému tlačítku přidáme "posluchače" na kliknutí
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Vytáhneme text z našeho data- atributu
+            const textToCopy = this.getAttribute('data-clipboard');
+
+            // Zkopírujeme do schránky
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                let icon = this.querySelector('i');
+                let textSpan = this.querySelector('span');
+                
+                let originalIconClass = icon.className;
+                let originalText = textSpan ? textSpan.innerText : '';
+
+                // Vizuální zpětná vazba
+                icon.className = 'fa-solid fa-check';
+                if(textSpan) textSpan.innerText = 'Zkopírováno';
+                this.classList.remove('btn-outline-info');
+                this.classList.add('btn-success', 'text-white');
+
+                // Návrat do původního stavu po 2 vteřinách
+                setTimeout(() => {
+                    icon.className = originalIconClass;
+                    if(textSpan) textSpan.innerText = originalText;
+                    this.classList.add('btn-outline-info');
+                    this.classList.remove('btn-success', 'text-white');
+                }, 2000);
+            }).catch(err => {
+                console.error('Chyba při kopírování: ', err);
+                alert('Nepodařilo se zkopírovat text.');
+            });
+        });
+    });
+});
+</script>
