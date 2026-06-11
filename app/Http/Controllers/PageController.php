@@ -9,16 +9,21 @@ use Illuminate\Support\Facades\Blade;
 
 class PageController extends Controller
 {
-    // 🔹 Veřejné zobrazení stránky podle slug
+    // Verejne zobrazeni stranky podle slug
     public function showBySlug($slug)
     {
-        $page = Page::where('slug', $slug)
-                    ->where('published', true)
-                    ->firstOrFail();
+        $query = Page::where('slug', $slug);
+        
+        // Pokud uzivatel NENI prihlaseny, vyzadujeme, aby byla stranka zverejnena
+        if (!auth()->check()) {
+            $query->where('published', true);
+        }
+        
+        $page = $query->firstOrFail();
     
         $text = $page->content;
 
-        // ✨ OPRAVENO: Odstraněna uzavírací závorka ve str_contains
+        // OPRAVENO: Odstranena uzaviraci zavorka ve str_contains
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
@@ -34,17 +39,25 @@ class PageController extends Controller
         ]);
     }
     
-    // 🔹 Veřejné zobrazení první stránky (test)
+    // Verejne zobrazeni prvni stranky (domovska stranka)
     public function show()
     {
-        $page = Page::where('published', true)->first(); 
+        $query = Page::query();
+        
+        // Pokud uzivatel NENI prihlaseny, vyzadujeme, aby byla stranka zverejnena
+        if (!auth()->check()) {
+            $query->where('published', true);
+        }
+        
+        $page = $query->first(); 
+        
         if (!$page) {
-            abort(404, 'Stránka nenalezena');
+            abort(404, 'Stranka nenalezena');
         }
 
         $text = $page->content;
 
-        // ✨ OPRAVENO
+        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
@@ -60,14 +73,14 @@ class PageController extends Controller
         ]);
     }
 
-    // 🔹 Zobrazení stránky podle ID
+    // Zobrazeni stranky podle ID
     public function showById($id)
     {
         $page = Page::findOrFail($id);
 
         $text = $page->content;
 
-        // ✨ OPRAVENO
+        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
@@ -83,7 +96,7 @@ class PageController extends Controller
         ]);
     }
 
-    // 🔸 ADMIN – přehled všech stránek v administraci
+    // ADMIN - prehled vsech stranek v administraci
     public function index()
     {
         $pages = Page::orderBy('created_at', 'desc')->get();
@@ -91,13 +104,13 @@ class PageController extends Controller
         return view('admin.pages.index', compact('pages'));
     }
 
-    // 🔸 ADMIN – vytvoření nové stránky (zobrazení formuláře)
+    // ADMIN - vytvoreni nove stranky (zobrazeni formulare)
     public function create()
     {
         return view('admin.pages.create');
     }
 
-    // 🔸 ADMIN – uložení nové stránky
+    // ADMIN - ulozeni nove stranky
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -114,10 +127,10 @@ class PageController extends Controller
             'published' => $request->has('published'),
         ]);
 
-        return redirect()->route('page.index')->with('success', 'Stránka byla vytvořena.');
+        return redirect()->route('page.index')->with('success', 'Stranka byla vytvorena.');
     }
 
-    // 🔸 ADMIN – editace stránky
+    // ADMIN - editace stranky
     public function edit($id)
     {
         $page = Page::findOrFail($id);
@@ -142,7 +155,7 @@ class PageController extends Controller
         return view('admin.pages.edit', compact('page', 'histories'));
     }
 
-    // 🔸 ADMIN – aktualizace stránky
+    // ADMIN - aktualizace stranky
     public function update(Request $request, $id)
     {
         $page = Page::findOrFail($id);
@@ -192,43 +205,43 @@ class PageController extends Controller
             ->delete();
 
         if (!$page->published) {
-            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena (je skrytá) a stará verze byla zálohována.');
+            return redirect('/admin/stranky')->with('success', 'Stranka byla upravena (je skryta) a stara verze byla zalohovana.');
         }
 
         if ($page->slug === 'home') {
-            return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
+            return redirect()->route('home')->with('success', 'Stranka byla uspesne upravena a zverejnena.');
         }
 
-        return redirect()->route('page.show', ['slug' => $page->slug])->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
+        return redirect()->route('page.show', ['slug' => $page->slug])->with('success', 'Stranka byla uspesne upravena a zverejnena.');
     }
 
-    // 🔸 ADMIN – smazání stránky
+    // ADMIN - smazani stranky
     public function destroy($id)
     {
         $page = Page::findOrFail($id);
         $page->delete();
 
-        return redirect('/admin/stranky')->with('success', 'Stránka byla smazána.');
+        return redirect('/admin/stranky')->with('success', 'Stranka byla smazana.');
     }
 
-    // 🔸 ADMIN – přepnutí stavu "published"
+    // ADMIN - prepnuti stavu "published"
     public function togglePublished($id)
     {
         $page = Page::findOrFail($id);
         $page->published = !$page->published;
         $page->save();
 
-        return redirect()->route('page.index')->with('success', 'Změněn stav zveřejnění stránky.');
+        return redirect()->route('page.index')->with('success', 'Zmenen stav zverejneni stranky.');
     }
 
-    // 🔸 ADMIN – rychlý náhled stránky z administrace
+    // ADMIN - rychly nahled stranky z administrace
     public function preview($id)
     {
         $page = Page::findOrFail($id);
 
         $text = $page->content;
 
-        // ✨ OPRAVENO
+        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
@@ -245,7 +258,7 @@ class PageController extends Controller
         ]);
     }
 
-    // Pomocná funkce pro extrakci hlavičky z textu
+    // Pomocna funkce pro extrakci hlavicky z textu
     private function extractHeaderData(&$content)
     {
         $headerData = null;

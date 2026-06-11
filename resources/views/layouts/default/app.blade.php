@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    @include('partials.head')
+    @include('default.head')
 </head>
 <body>
 
-  @include('partials.navbar')
+  @include('default.navbar')
 
     @hasSection('header')
         @yield('header')
     @else
-        @include('partials.carousel')
+        @include('default.carousel')
     @endif
 
     @if (session('success'))
@@ -24,8 +24,8 @@
         @yield('content')
     </main>
 
-    @include('partials.footer')
-    @include('partials.scripts')
+    @include('default.footer')
+    @include('default.scripts')
 
 
 

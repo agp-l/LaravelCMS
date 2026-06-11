@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
         // Společný view composer pro všechny šablony
         view()->composer('*', function ($view) {
             
-            // ✨ STATICKÁ PAMĚŤ (TADY JE TA KOUZELNÁ OPRAVA)
+            // STATICKÁ PAMĚŤ (TADY JE TA KOUZELNÁ OPRAVA)
             // Zabráníme tomu, aby se databáze ptala na stejnou věc pro každý @include
             static $sharedData = null;
 
@@ -74,7 +74,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Jazykový přepínač
-        View::composer(['partials.language-switch', 'mizzle.language-switch'], function ($view) {
+        View::composer(['default.language-switch', 'mizzle.language-switch'], function ($view) {
             $languageLinks = [];
 
             foreach (LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {

@@ -3,7 +3,7 @@
 @section('header')
     @php
         // Bezpečná detekce složky šablony na základě aktivního layoutu
-        $themeFolder = str_contains($layout ?? 'default', 'mizzle') ? 'mizzle' : 'partials';
+        $themeFolder = str_contains($layout ?? 'default', 'mizzle') ? 'mizzle' : 'default';
     @endphp
     
     @if(isset($headerData) && $headerData)

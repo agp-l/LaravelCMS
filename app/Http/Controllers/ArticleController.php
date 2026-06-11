@@ -11,16 +11,25 @@ use Intervention\Image\Drivers\Gd\Driver;
 class ArticleController extends Controller
 {
     public function showBySlug(Request $request, $slug)
-
     {
         if (!$slug) {
             abort(404);
         }
     
-        $article = Article::where('slug', $slug)->firstOrFail();
+        // CHYTRÁ KONTROLA ZVEŘEJNĚNÍ
+        $query = Article::where('slug', $slug);
+        
+        // Pokud uživatel NENÍ přihlášený do administrace, vyžadujeme, aby byl článek zveřejněný
+        if (!auth()->check()) {
+            $query->where('published', true);
+        }
+        
+        // Zkusíme článek najít. Pokud není (nebo není zveřejněný pro běžného diváka), vyhodí to 404
+        $article = $query->firstOrFail();
     
         $selectedCategory = $request->query('category');
     
+        // Boční panel (zde vždy zobrazujeme jen zveřejněné články všem)
         $articlesQuery = Article::where('published', true);
     
         if ($selectedCategory) {
@@ -38,7 +47,6 @@ class ArticleController extends Controller
             'selectedCategory' => $selectedCategory,
         ]);
     }
-    
 
 
     public function adminIndex(Request $request)
@@ -215,14 +223,5 @@ class ArticleController extends Controller
             'selectedCategory' => $category,
         ]);
     }
-
-
-
-
-
-
-
-
-
 
 }

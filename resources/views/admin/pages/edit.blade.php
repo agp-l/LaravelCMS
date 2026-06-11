@@ -15,7 +15,7 @@
                 $headerData[$key] = $attrMatches[2][$index];
             }
         }
-        $themeFolder = str_contains($layout ?? 'default', 'mizzle') ? 'mizzle' : 'partials';
+        $themeFolder = str_contains($layout ?? 'default', 'mizzle') ? 'mizzle' : 'default';
     @endphp
 
     @if($headerData)

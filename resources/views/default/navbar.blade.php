@@ -35,7 +35,7 @@
                 @endforeach
             </ul>
 
-            @include('partials.language-switch')
+            @include('default.language-switch')
 
             @auth
                 <!-- Admin -->

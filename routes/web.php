@@ -10,6 +10,10 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\LayoutOverrideController;
 use App\Http\Controllers\InstallationController;
+use App\Models\Page;
+use App\Models\Article;
+use App\Models\Menu;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -85,7 +89,23 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
 
     Route::post('/menu/reorder', [MenuController::class, 'reorder'])->name('menu.reorder');
 
-    Route::get('/', fn() => view('admin.master'))->name('dashboard');
+    Route::get('/', function () {
+        // Vytáhneme 5 nejnovějších nezveřejněných stránek
+        $unpublishedPages = Page::where('published', false)->latest()->take(5)->get();
+        
+        // Vytáhneme 5 nejnovějších nezveřejněných článků
+        $unpublishedArticles = Article::where('published', false)->latest()->take(5)->get();
+        
+        // Vytáhneme skryté položky menu 
+        // POZOR: Zkontroluj, jestli se tvůj sloupec pro skrytí jmenuje 'is_visible', 'active' nebo jinak!
+        $hiddenMenuItems = Menu::where('published', false)->get(); 
+
+        return view('admin.master', compact(
+            'unpublishedPages', 
+            'unpublishedArticles', 
+            'hiddenMenuItems'
+        ));
+    })->name('dashboard');
 
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('admin.register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('admin.store');
