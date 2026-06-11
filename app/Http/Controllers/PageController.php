@@ -176,9 +176,33 @@ class PageController extends Controller
             return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
         }
 
-        // 3. V ostatních případech přesměrujeme na konkrétní veřejnou sub-stránku
+
+        // ✨ AUTOMATICKÝ ÚKLID HISTORIE (Záchova pouze posledních 15 verzí)
+        $maxHistories = 15;
+
+        // 1. Najdeme ID 15 nejnovějších záloh pro tuto KONKRÉTNÍ stránku
+        $latestHistoryIds = \App\Models\PageHistory::where('page_id', $page->id)
+            ->orderBy('created_at', 'desc')
+            ->take($maxHistories)
+            ->pluck('id');
+
+        // 2. Smažeme všechny ostatní zálohy této stránky, které nejsou v našem seznamu "vyvolených"
+        \App\Models\PageHistory::where('page_id', $page->id)
+            ->whereNotIn('id', $latestHistoryIds)
+            ->delete();
+
+
+        // ... tvé chytré přesměrování ...
+        if (!$page->published) {
+            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze zálohována.');
+        }
+        if ($page->slug === 'home') {
+            return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
+        }
         return redirect()->route('page.show', ['slug' => $page->slug])->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
     }
+
+   
 
     // 🔸 ADMIN – smazání stránky
     public function destroy($id)
