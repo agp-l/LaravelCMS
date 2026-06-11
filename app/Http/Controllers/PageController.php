@@ -9,57 +9,78 @@ use Illuminate\Support\Facades\Blade;
 
 class PageController extends Controller
 {
-    // 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas nebo tvůj kontakt)
+    // 🔹 Veřejné zobrazení stránky podle slug
     public function showBySlug($slug)
     {
         $page = Page::where('slug', $slug)
                     ->where('published', true)
                     ->firstOrFail();
     
-        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu před odesláním do šablony
-        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
-            return Blade::render("<x-qr-payment {$matches[1]} />");
-        }, $page->content);
+        $text = $page->content;
 
-        return view('pages.page-detail', ['page' => $page]);
+        // ✨ OPRAVENO: Odstraněna uzavírací závorka ve str_contains
+        if (str_contains($text, '[qr_platba')) {
+            $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+                return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
+            }, $text);
+        }
+
+        $headerData = $this->extractHeaderData($text);
+        $page->content = $text;
+
+        return view('pages.page-detail', [
+            'page' => $page,
+            'headerData' => $headerData
+        ]);
     }
     
-
-    // 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
+    // 🔹 Veřejné zobrazení první stránky (test)
     public function show()
     {
-        // Najde první stránku, ale pouze z těch, které jsou veřejné
         $page = Page::where('published', true)->first(); 
         if (!$page) {
             abort(404, 'Stránka nenalezena');
         }
 
-        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu
-            // Najde [qr_platba] i s jakýmikoli vnitřními parametry
-        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
-            // $matches[1] obsahuje surové parametry, např.: vs="2000" msg="Test"
-            // Laravel je automaticky napáruje na proměnné v konstruktoru komponenty!
-            return Blade::render("<x-qr-payment {$matches[1]} />");
-        }, $page->content);
+        $text = $page->content;
 
+        // ✨ OPRAVENO
+        if (str_contains($text, '[qr_platba')) {
+            $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+                return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
+            }, $text);
+        }
 
-        return view('pages.page-detail', ['page' => $page]);
+        $headerData = $this->extractHeaderData($text);
+        $page->content = $text;
+
+        return view('pages.page-detail', [
+            'page' => $page,
+            'headerData' => $headerData
+        ]);
     }
 
-    // 🔹 Zobrazení stránky podle ID – např. z administrace jako náhled
+    // 🔹 Zobrazení stránky podle ID
     public function showById($id)
     {
         $page = Page::findOrFail($id);
 
-        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu
-            // Najde [qr_platba] i s jakýmikoli vnitřními parametry
-        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
-            // $matches[1] obsahuje surové parametry, např.: vs="2000" msg="Test"
-            // Laravel je automaticky napáruje na proměnné v konstruktoru komponenty!
-            return Blade::render("<x-qr-payment {$matches[1]} />");
-        }, $page->content);
+        $text = $page->content;
 
-        return view('pages.page-detail', ['page' => $page]);
+        // ✨ OPRAVENO
+        if (str_contains($text, '[qr_platba')) {
+            $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+                return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
+            }, $text);
+        }
+
+        $headerData = $this->extractHeaderData($text);
+        $page->content = $text;
+
+        return view('pages.page-detail', [
+            'page' => $page,
+            'headerData' => $headerData
+        ]);
     }
 
     // 🔸 ADMIN – přehled všech stránek v administraci
@@ -101,23 +122,19 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
 
-        // Načteme všechny historické verze pro tuto stránku seřazené od nejnovější po nejstarší
         $histories = \App\Models\PageHistory::where('page_id', $id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Pokud uživatel v adrese poslal konkrétní verzi (např. ?history_id=5)
         if (request()->has('history_id')) {
             $history = \App\Models\PageHistory::where('page_id', $id)
                 ->findOrFail(request()->query('history_id'));
             
-            // Dočasně přepíšeme data v objektu $page daty ze staré zálohy
             $page->title = $history->title;
             $page->slug = $history->slug;
             $page->content = $history->content;
             $page->published = $history->published;
             
-            // Přidáme pomocné značky, abychom v šabloně poznali, že prohlížíme historii
             $page->is_history_preview = true;
             $page->history_date = $history->created_at;
         }
@@ -125,13 +142,11 @@ class PageController extends Controller
         return view('admin.pages.edit', compact('page', 'histories'));
     }
 
-
     // 🔸 ADMIN – aktualizace stránky
     public function update(Request $request, $id)
     {
         $page = Page::findOrFail($id);
 
-        // ZÁLOHA: Než stránku přepíšeme novými daty, uložíme její současný stav do historie
         PageHistory::create([
             'page_id'   => $page->id,
             'title'     => $page->title,
@@ -166,43 +181,26 @@ class PageController extends Controller
             'published' => $request->has('published'),
         ]);
 
-        // 1. Pokud stránka není publikovaná, veřejný web by hodil chybu 404. Vrátíme uživatele do adminu.
-        if (!$page->published) {
-            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena (je skrytá) a stará verze byla zálohována.');
-        }
-
-        // 2. Pokud je to hlavní domovská stránka (slug: home), přesměrujeme na hlavní index weby
-        if ($page->slug === 'home') {
-            return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
-        }
-
-
-        // ✨ AUTOMATICKÝ ÚKLID HISTORIE (Záchova pouze posledních 15 verzí)
         $maxHistories = 15;
-
-        // 1. Najdeme ID 15 nejnovějších záloh pro tuto KONKRÉTNÍ stránku
         $latestHistoryIds = \App\Models\PageHistory::where('page_id', $page->id)
             ->orderBy('created_at', 'desc')
             ->take($maxHistories)
             ->pluck('id');
 
-        // 2. Smažeme všechny ostatní zálohy této stránky, které nejsou v našem seznamu "vyvolených"
         \App\Models\PageHistory::where('page_id', $page->id)
             ->whereNotIn('id', $latestHistoryIds)
             ->delete();
 
-
-        // ... tvé chytré přesměrování ...
         if (!$page->published) {
-            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze zálohována.');
+            return redirect('/admin/stranky')->with('success', 'Stránka byla upravena (je skrytá) a stará verze byla zálohována.');
         }
+
         if ($page->slug === 'home') {
             return redirect()->route('home')->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
         }
+
         return redirect()->route('page.show', ['slug' => $page->slug])->with('success', 'Stránka byla úspěšně upravena a zveřejněna.');
     }
-
-   
 
     // 🔸 ADMIN – smazání stránky
     public function destroy($id)
@@ -228,14 +226,42 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
 
-        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu, aby byl vidět i v náhledu
-        if (str_contains($page->content, '[qr_platba]')) {
-            $page->content = str_replace('[qr_platba]', Blade::render('<x-qr-payment />'), $page->content);
+        $text = $page->content;
+
+        // ✨ OPRAVENO
+        if (str_contains($text, '[qr_platba')) {
+            $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+                return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
+            }, $text);
         }
+
+        $headerData = $this->extractHeaderData($text);
+        $page->content = $text;
 
         return view('pages.page-detail', [
             'page' => $page,
+            'headerData' => $headerData,
             'preview' => true
         ]);
+    }
+
+    // Pomocná funkce pro extrakci hlavičky z textu
+    private function extractHeaderData(&$content)
+    {
+        $headerData = null;
+        
+        if (preg_match('/\[hlavicka\s+(.*?)\]/s', $content, $matches)) {
+            $attrString = $matches[1];
+            
+            preg_match_all('/(\w+)="([^"]*)"/s', $attrString, $attrMatches);
+            $headerData = [];
+            foreach ($attrMatches[1] as $index => $key) {
+                $headerData[$key] = $attrMatches[2][$index];
+            }
+            
+            $content = str_replace($matches[0], '', $content);
+        }
+        
+        return $headerData;
     }
 }

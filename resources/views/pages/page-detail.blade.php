@@ -2,6 +2,15 @@
 
 
 @extends($layout ?? 'layouts.default.app')
+@section('header')
+    @if(isset($headerData) && $headerData)
+        {{-- Pokud uživatel zadal hlavičku, načteme šablonu podle parametru "typ" (výchozí je 'hero') --}}
+        @include('partials.headers.' . ($headerData['typ'] ?? 'hero'), $headerData)
+    @else
+        {{-- Pokud uživatel nezadal nic, načteme výchozí velký carousel --}}
+        @include('partials.carousel')
+    @endif
+@endsection
 
 @section('title', $page->title)
 

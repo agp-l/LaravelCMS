@@ -6,7 +6,9 @@
 <body>
 
     @include('partials.navbar')
-    @include('partials.carousel')
+    
+    {{-- Zde se dynamicky vloží hlavička podle toho, co řekne konkrétní stránka --}}
+    @yield('header')
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
