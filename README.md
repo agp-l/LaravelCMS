@@ -1,66 +1,337 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Návod k instalaci a údržbě CMS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Tento dokument slouží jako kompletní průvodce pro nasazení, instalaci a údržbu tohoto Laravel CMS. Obsahuje důležité informace o struktuře projektu, řešení problémů na sdílených hostingových službách a slovníček základních pojmů.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# 1. Jak funguje složka `public/` (DŮLEŽITÉ)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Laravel je postaven na moderních bezpečnostních standardech.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Jediná složka, která má být přístupná z internetu, je složka `public/`.**
 
-## Learning Laravel
+Všechny ostatní složky (`app`, `config`, `.env`, atd.) musí zůstat před návštěvníky skryté, aby nikdo nemohl získat přístup k databázovým údajům nebo zdrojovému kódu aplikace.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Ve složce `public/` se nachází:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+* `index.php` – hlavní vstupní bod aplikace
+* `.htaccess` – pravidla pro hezké URL adresy a směrování požadavků
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+# 2. Příprava na hostingu
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Například na sdíleném hostingu můžeš celý projekt nahrát do složky:
 
-### Premium Partners
+```
+sub/test/
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Problém je, že většina hostingů automaticky směřuje návštěvníky do této složky, nikoliv do:
 
-## Contributing
+```
+sub/test/public/
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Bez správného nastavení Laravel nebude fungovat.
 
-## Code of Conduct
+## Možnost A: Nastavení Document Root (doporučeno)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Přihlas se do administrace hostingu.
+2. Otevři nastavení domény nebo subdomény.
+3. Najdi položku **Document Root** nebo **Cílový adresář**.
+4. Nastav cestu tak, aby končila složkou `public`.
 
-## Security Vulnerabilities
+Příklad:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
+sub/test/public
+```
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Možnost B: Přesměrovací `.htaccess`
+
+Pokud hosting změnu Document Root nepodporuje, vytvoř v kořenové složce projektu nový soubor `.htaccess`:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+```
+
+Tento soubor automaticky přesměruje všechny požadavky do složky `public`.
+
+---
+
+# 3. Konfigurace a první instalace
+
+Před spuštěním instalátoru je potřeba připravit konfigurační soubor.
+
+## Vytvoření souboru `.env`
+
+V kořenové složce projektu najdeš například:
+
+```
+.env.example
+```
+
+nebo vlastní šablonu:
+
+```
+.env.easy
+```
+
+Soubor zkopíruj nebo přejmenuj na:
+
+```
+.env
+```
+
+---
+
+## Nastavení oprávnění
+
+Soubor `.env` musí být zapisovatelný, aby do něj mohl instalátor uložit nastavení databáze.
+
+Typicky:
+
+```
+CHMOD 664
+```
+
+V krajním případě:
+
+```
+CHMOD 777
+```
+
+---
+
+## Spuštění instalace
+
+1. Otevři hlavní adresu webu.
+2. Pokud systém není nainstalovaný, automaticky tě přesměruje na:
+
+```
+https://tvojedomena.cz/install
+```
+
+3. Vyplň údaje k databázi.
+4. Vytvoř administrátorský účet.
+5. Dokonči instalaci.
+
+---
+
+# 4. Jak provést čistou reinstalaci CMS
+
+Pokud chceš systém uvést do továrního nastavení, proveď následující kroky.
+
+## 1. Vymazání databáze
+
+Přihlas se do databáze například přes phpMyAdmin a smaž všechny tabulky aplikace.
+
+Nezapomeň odstranit také tabulku:
+
+```
+migrations
+```
+
+---
+
+## 2. Odstranění instalačního zámku
+
+Ve složce:
+
+```
+storage/
+```
+
+smaž soubor:
+
+```
+installed
+```
+
+Dokud tento soubor existuje, instalátor se nespustí.
+
+---
+
+## 3. Vymazání cache konfigurace
+
+Ve složce:
+
+```
+bootstrap/cache/
+```
+
+smaž soubory:
+
+```
+config.php
+routes.php
+```
+
+(pokud existují)
+
+Jinak může Laravel používat staré nastavení a ignorovat změny v souboru `.env`.
+
+---
+
+## 4. Reset souboru `.env`
+
+Vymaž hodnoty:
+
+```env
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+DB_PREFIX=
+```
+
+Po otevření webu se znovu spustí instalační průvodce.
+
+---
+
+# 5. Co je Artisan?
+
+Artisan je příkazová řádka Laravelu.
+
+Pomáhá automatizovat běžné úkoly, například:
+
+* vytváření souborů
+* spouštění migrací
+* čištění cache
+* generování klíčů
+
+Používá se z terminálu:
+
+```bash
+php artisan [příkaz]
+```
+
+Příklad:
+
+```bash
+php artisan migrate
+```
+
+---
+
+# 6. Co jsou migrace?
+
+Migrace fungují jako verzování databáze.
+
+Místo ručního vytváření tabulek v phpMyAdminu popíšeš strukturu databáze v PHP souborech.
+
+Například:
+
+* vytvoření tabulky článků
+* přidání sloupce `title`
+* přidání sloupce `content`
+
+Při instalaci Laravel automaticky vytvoří databázi podle těchto migračních souborů.
+
+Díky tomu mají všichni uživatelé CMS stejnou databázovou strukturu.
+
+---
+
+# 7. Užitečné terminálové příkazy
+
+## Spuštění migrací
+
+```bash
+php artisan migrate
+```
+
+Vytvoří nebo aktualizuje databázové tabulky.
+
+---
+
+## Kompletní obnova databáze
+
+```bash
+php artisan migrate:fresh
+```
+
+Smaže všechny tabulky a vytvoří je znovu.
+
+**Pozor: Tento příkaz nenávratně smaže všechna data.**
+
+---
+
+## Vygenerování APP_KEY
+
+```bash
+php artisan key:generate
+```
+
+Vytvoří nový šifrovací klíč a uloží ho do souboru `.env`.
+
+---
+
+## Vymazání cache konfigurace
+
+```bash
+php artisan config:clear
+```
+
+Použij při změnách v souboru `.env`.
+
+---
+
+## Vymazání cache rout
+
+```bash
+php artisan route:clear
+```
+
+Vyčistí uložené routy.
+
+---
+
+## Vymazání cache šablon
+
+```bash
+php artisan view:clear
+```
+
+Vymaže zkompilované Blade šablony.
+
+---
+
+## Publikování souborů balíčků
+
+```bash
+php artisan vendor:publish
+```
+
+Zkopíruje konfigurační a další soubory balíčků do projektu, aby je bylo možné upravovat.
+
+Příklad použití:
+
+* Spatie MediaLibrary
+* Laravel Passport
+* další Laravel balíčky
+
+---
+
+# Doporučení při řešení problémů
+
+Pokud Laravel ignoruje změny v konfiguraci, většinou pomůže:
+
+```bash
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+Případně zkontroluj:
+
+* obsah souboru `.env`
+* práva souborů
+* správné nastavení složky `public`
+* existenci souboru `storage/installed`
