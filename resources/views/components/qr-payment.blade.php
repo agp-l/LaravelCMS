@@ -1,0 +1,1 @@
+<img src="{{ $qrDataUri }}" alt="QR kód pro platbu" class="img-fluid" {{ $attributes }}>

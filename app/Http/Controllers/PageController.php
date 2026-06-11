@@ -5,21 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use App\Models\PageHistory;
+use Illuminate\Support\Facades\Blade;
 
 class PageController extends Controller
 {
-// 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas)
+    // 🔹 Veřejné zobrazení stránky podle slug (např. /o-nas nebo tvůj kontakt)
     public function showBySlug($slug)
     {
         $page = Page::where('slug', $slug)
-                    ->where('published', true) // 👈 TADY JE TA OPRAVA
+                    ->where('published', true)
                     ->firstOrFail();
     
+        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu před odesláním do šablony
+        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+            return Blade::render("<x-qr-payment {$matches[1]} />");
+        }, $page->content);
+
         return view('pages.page-detail', ['page' => $page]);
     }
     
 
-// 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
+    // 🔹 Veřejné zobrazení první stránky – (možná testovací metoda?)
     public function show()
     {
         // Najde první stránku, ale pouze z těch, které jsou veřejné
@@ -28,6 +34,15 @@ class PageController extends Controller
             abort(404, 'Stránka nenalezena');
         }
 
+        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu
+            // Najde [qr_platba] i s jakýmikoli vnitřními parametry
+        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+            // $matches[1] obsahuje surové parametry, např.: vs="2000" msg="Test"
+            // Laravel je automaticky napáruje na proměnné v konstruktoru komponenty!
+            return Blade::render("<x-qr-payment {$matches[1]} />");
+        }, $page->content);
+
+
         return view('pages.page-detail', ['page' => $page]);
     }
 
@@ -35,6 +50,14 @@ class PageController extends Controller
     public function showById($id)
     {
         $page = Page::findOrFail($id);
+
+        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu
+            // Najde [qr_platba] i s jakýmikoli vnitřními parametry
+        $page->content = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
+            // $matches[1] obsahuje surové parametry, např.: vs="2000" msg="Test"
+            // Laravel je automaticky napáruje na proměnné v konstruktoru komponenty!
+            return Blade::render("<x-qr-payment {$matches[1]} />");
+        }, $page->content);
 
         return view('pages.page-detail', ['page' => $page]);
     }
@@ -73,7 +96,7 @@ class PageController extends Controller
         return redirect()->route('page.index')->with('success', 'Stránka byla vytvořena.');
     }
 
-// 🔸 ADMIN – editace stránky
+    // 🔸 ADMIN – editace stránky
     public function edit($id)
     {
         $page = Page::findOrFail($id);
@@ -103,48 +126,48 @@ class PageController extends Controller
     }
 
 
-// 🔸 ADMIN – aktualizace stránky
-public function update(Request $request, $id)
-{
-    $page = Page::findOrFail($id);
+    // 🔸 ADMIN – aktualizace stránky
+    public function update(Request $request, $id)
+    {
+        $page = Page::findOrFail($id);
 
-    // ZÁLOHA: Než stránku přepíšeme novými daty, uložíme její současný stav do historie
-    PageHistory::create([
-        'page_id'   => $page->id,
-        'title'     => $page->title,
-        'slug'      => $page->slug,
-        'content'   => $page->content,
-        'published' => $page->published,
-    ]);
+        // ZÁLOHA: Než stránku přepíšeme novými daty, uložíme její současný stav do historie
+        PageHistory::create([
+            'page_id'   => $page->id,
+            'title'     => $page->title,
+            'slug'      => $page->slug,
+            'content'   => $page->content,
+            'published' => $page->published,
+        ]);
 
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'slug' => 'required|string|max:255|unique:pages,slug,' . $page->id,
-        'content' => 'nullable|string',
-        'published' => 'nullable',
-    ]);
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:pages,slug,' . $page->id,
+            'content' => 'nullable|string',
+            'published' => 'nullable',
+        ]);
 
-    $content = $request->input('content', null);
+        $content = $request->input('content', null);
 
-    if ($content !== null) {
-        $trim = trim($content);
+        if ($content !== null) {
+            $trim = trim($content);
 
-        if ($trim === '[]') {
+            if ($trim === '[]') {
+                $content = $page->content;
+            }
+        } else {
             $content = $page->content;
         }
-    } else {
-        $content = $page->content;
+
+        $page->update([
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'content' => $content,
+            'published' => $request->has('published'),
+        ]);
+
+        return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze byla zálohována.');
     }
-
-    $page->update([
-        'title' => $validated['title'],
-        'slug' => $validated['slug'],
-        'content' => $content,
-        'published' => $request->has('published'),
-    ]);
-
-    return redirect('/admin/stranky')->with('success', 'Stránka byla upravena a stará verze byla zálohována.');
-}
 
     // 🔸 ADMIN – smazání stránky
     public function destroy($id)
@@ -165,18 +188,19 @@ public function update(Request $request, $id)
         return redirect()->route('page.index')->with('success', 'Změněn stav zveřejnění stránky.');
     }
 
-
+    // 🔸 ADMIN – rychlý náhled stránky z administrace
     public function preview($id)
     {
         $page = Page::findOrFail($id);
+
+        // ✨ PŘIDÁNO: Zpracování shortcodu pro QR platbu, aby byl vidět i v náhledu
+        if (str_contains($page->content, '[qr_platba]')) {
+            $page->content = str_replace('[qr_platba]', Blade::render('<x-qr-payment />'), $page->content);
+        }
 
         return view('pages.page-detail', [
             'page' => $page,
             'preview' => true
         ]);
     }
-
-
-
-
 }
