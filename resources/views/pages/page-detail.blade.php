@@ -25,16 +25,7 @@
 
 
 
-
-
-
-        {{-- Plná šířka bez kontejneru --}}
-       
         <!--<h1 class="display-6 fw-bold text-center mb-2">{{ $page->title }}</h1>-->
-
-
-           
-
 
 
           
@@ -49,17 +40,6 @@
                 @else
                 <div>{!! $page->content !!}</div>
                 @endif
-   
-
-
-
-
-
-
-
-
-
-
     
     </section>
 
