@@ -26,11 +26,12 @@
         @endif
 
         {{-- ZDE JE VLOŽENÝ CHYBĚJÍCÍ BLOK PRO ÚSPĚŠNOU REZERVACI A QR KÓD --}}
-@if(session('success_msg'))
+        @if (session('success_msg'))
             <div class="mb-5 text-center fade-in">
                 {!! session('success_msg') !!}
-                
-                <a href="{{ route('reservation.index') }}" class="btn btn-dark btn-lg mt-4 shadow-sm" style="border-radius: 50px; padding: 10px 30px;">
+
+                <a href="{{ route('reservation.index') }}" class="btn btn-dark btn-lg mt-4 shadow-sm"
+                    style="border-radius: 50px; padding: 10px 30px;">
                     <i class="fa-solid fa-arrow-rotate-left me-2"></i> Zadat další rezervaci
                 </a>
             </div>
@@ -50,6 +51,7 @@
                                 <input type="radio" name="activity_id" value="{{ $activity->id }}"
                                     class="d-none activity-radio" data-color="{{ $activity->color_theme }}"
                                     data-price="{{ $activity->price_per_hour }}"
+                                    data-price-day="{{ $activity->price_per_day }}"
                                     data-days="{{ json_encode($activity->scheduleRules->whereNull('date_override')->pluck('day_of_week')->toArray()) }}"
                                     {{ $index === 0 ? 'checked' : '' }}>
                                 <div class="activity-card {{ $index === 0 ? 'active' : '' }}"
@@ -80,8 +82,8 @@
                 </div>
             </div>
 
-           <div class="step-container" style="--theme-color: #059669;" id="calendar-step">
-                
+            <div class="step-container" style="--theme-color: #059669;" id="calendar-step">
+
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="step-title mb-0"><span class="step-number">2</span> Zvolte datum</h3>
                     <div class="text-muted fw-bold text-end" id="calMonthText">
@@ -94,10 +96,14 @@
                 </div>
 
                 <div class="d-flex justify-content-center gap-3 mt-3">
-                    <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm" id="scrollPrev" style="width: 45px; height: 45px; background: #f8fafc;">
+                    <button type="button"
+                        class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm"
+                        id="scrollPrev" style="width: 45px; height: 45px; background: #f8fafc;">
                         <i class="fa-solid fa-chevron-left" style="color: #64748b;"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm" id="scrollNext" style="width: 45px; height: 45px; background: #f8fafc;">
+                    <button type="button"
+                        class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm"
+                        id="scrollNext" style="width: 45px; height: 45px; background: #f8fafc;">
                         <i class="fa-solid fa-chevron-right" style="color: #64748b;"></i>
                     </button>
                 </div>
@@ -110,7 +116,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-4 mb-md-0 border-end pe-md-4">
                         <h5 class="fw-bold mb-3 fs-6 text-muted text-uppercase">Dostupné časy</h5>
-                        
+
                         {{-- Skrytý input pro odeslání data do Laravelu --}}
                         <input type="hidden" name="reservation_date" id="selectedDateOutput">
 
@@ -126,35 +132,54 @@
 
                     <div class="col-md-6 ps-md-4">
                         <h5 class="fw-bold mb-3 fs-6 text-muted text-uppercase">Vaše údaje</h5>
-                        
+
                         <div class="mb-3"><label class="form-label fw-bold small">Jméno dítěte</label><input
                                 type="text" class="form-control bg-light border-0" name="child_name" required></div>
-                        
+
+                        <div class="mb-3"><label class="form-label fw-bold small">Věk dětí <span
+                                    class="text-muted fw-normal">(nepovinné)</span></label><input type="text"
+                                class="form-control bg-light border-0" name="child_info" placeholder="Např. 8 a 10 let">
+                        </div>
+
                         <div class="row">
                             <div class="col-6 mb-3"><label class="form-label fw-bold small">Počet dětí</label><select
                                     class="form-select bg-light border-0" name="kidsCount">
                                     <option value="1">1 dítě</option>
                                     <option value="2">2 děti</option>
+                                    <option value="3">3 děti</option>
+                                    <option value="4">4 děti</option>
+                                    <option value="5">5 dětí</option>
                                 </select></div>
-                            <div class="col-6 mb-3"><label class="form-label fw-bold small">Sdílení</label><select
-                                    class="form-select bg-light border-0" name="sharing">
-                                    <option value="Individuální čas">Soukromě</option>
-                                    <option value="Sdílený čas">Otevřená skupina</option>
-                                </select></div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold small">Podoba setkání</label>
+                                <select class="form-select bg-light border-0" name="sharing">
+                                    <option value="Individuální čas">Individuálně / soukromě (Chceme průvodce pouze pro
+                                        naše dítě.)</option>
+                                    <option value="Sdílený čas">Otevřená parta (Budeme rádi, když se přidají další děti.)
+                                    </option>
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Přidán chybějící select pro pricing, který vyžaduje JS i Controller --}}
-                        <div class="mb-3"><label class="form-label fw-bold small">Typ parťáka (Cena)</label><select
+                        <div class="mb-3"><label class="form-label fw-bold small">Hodinová cena / paušál</label><select
                                 class="form-select bg-light border-0" name="pricing">
-                                <option value="Parťák na hodinu">Základní (dle hodin)</option>
-                                <option value="Celodenní parťák">Celodenní (fix 1500 Kč)</option>
-                            </select></div>
+                                <option value="Parťák na hodinu">Cena od hodiny</option>
+                                <option value="Celodenní parťák">Paušální cena</option>
+                            </select>
+                        </div>
 
                         <div class="mb-3"><label class="form-label fw-bold small">Jméno rodiče</label><input
                                 type="text" class="form-control bg-light border-0" name="parent_name" required></div>
+
                         <div class="mb-4"><label class="form-label fw-bold small">Kontakt (E-mail /
                                 Telefon)</label><input type="text" class="form-control bg-light border-0"
                                 name="contact" required></div>
+
+                        <div class="mb-4"><label class="form-label fw-bold small">Poznámka <span
+                                    class="text-muted fw-normal">(nepovinné)</span></label>
+                            <textarea class="form-control bg-light border-0" name="note" rows="2"
+                                placeholder="Jakékoliv specifikum, které bych měl vědět..."></textarea>
+                        </div>
 
                         <button type="submit" class="btn btn-lg w-100 text-white fw-bold" id="submit-btn"
                             style="background: var(--theme-color, #059669);">Dokončit rezervaci <i
@@ -165,7 +190,7 @@
 
         </form>
     </div>
-    
+
     {{-- Správně napojený JavaScript s cache busterem --}}
     <script src="{{ asset('js/reservation.js') }}?v={{ time() }}"></script>
 

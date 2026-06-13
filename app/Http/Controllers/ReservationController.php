@@ -12,28 +12,27 @@ use BaconQrCode\Writer;
 
 class ReservationController extends Controller
 {
-
-
     public function index()
     {
-        $activities = \App\Models\Activity::all(); // Načte aktivity z databáze
-        return view('reservation', compact('activities')); // Pošle je do šablony
+        $activities = \App\Models\Activity::all();
+        return view('reservation', compact('activities'));
     }
 
 public function store(Request $request)
     {
-        // 1. Validace prichozich dat
+        // 1. Validace příchozích dat
         $validated = $request->validate([
-            'activity_id'      => 'required|integer|exists:activities,id', // Opraveno: Čekáme ID aktivity
+            'activity_id'      => 'required|integer|exists:activities,id',
             'reservation_date' => 'required|date',
             'slot'             => 'required|array',
             'child_name'       => 'required|string|max:255',
             'kidsCount'        => 'required|integer|min:1',
+            'child_info'       => 'nullable|string|max:500', // NOVÉ: Nepovinné pole
             'parent_name'      => 'required|string|max:255',
             'contact'          => 'required|string|max:255',
+            'note'             => 'nullable|string|max:1000', // NOVÉ: Nepovinné pole
             'pricing'          => 'required|string',
             'sharing'          => 'required|string'
-            // Poznámka: 'activities' pole jsme zrušili
         ]);
 
         // 2. Načtení vybrané aktivity z databáze (kvůli zjištění přesné ceny)
@@ -43,34 +42,33 @@ public function store(Request $request)
         $pocet_hodin = count($validated['slot']);
         
         if ($validated['pricing'] === 'Celodenní parťák') {
-            $celkova_cena = 1500;
+            $celkova_cena = $activity->price_per_day; // Bere cenu specifickou pro danou aktivitu
         } else {
-            // Cena se teď počítá přesně podle toho, jakou má vybraná aktivita nastavenou hodinovou sazbu
             $celkova_cena = $pocet_hodin * $activity->price_per_hour; 
         }
 
-        // 4. Ulozeni do databaze
+        // 4. Uložení do databáze
         try {
             $reservation = Reservation::create([
                 'date'           => $validated['reservation_date'],
                 'slots'          => $validated['slot'],
                 'child_name'     => $validated['child_name'],
                 'kids_count'     => $validated['kidsCount'],
-                'child_info'     => '', 
+                'child_info'     => $validated['child_info'] ?? '', // NOVÉ: Předání do DB
                 'parent_name'    => $validated['parent_name'],
                 'contact'        => $validated['contact'],
-                'note'           => '', 
+                'note'           => $validated['note'] ?? '', // NOVÉ: Předání do DB
                 'pricing_model'  => $validated['pricing'],
                 'sharing_type'   => $validated['sharing'],
                 'total_price'    => $celkova_cena,
                 'payment_status' => 'pending',
-                'activity_id'    => $activity->id // Ukládáme správné ID
+                'activity_id'    => $activity->id
             ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Chyba databáze: ' . $e->getMessage()]);
         }
 
-       // 5. Generovani QR kodu pro platbu
+        // 5. Generování QR kódu pro platbu
         $iban = "CZ6830300000001004823033"; 
         $amountFormat = number_format($celkova_cena, 2, '.', '');
         
@@ -80,11 +78,11 @@ public function store(Request $request)
         
         $spaydString = "SPD*1.0*ACC:{$iban}*AM:{$amountFormat}*CC:CZK*MSG:{$msgEncoded}";
 
-        $renderer = new \BaconQrCode\Renderer\ImageRenderer(
-            new \BaconQrCode\Renderer\RendererStyle\RendererStyle(200),
-            new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+        $renderer = new ImageRenderer(
+            new RendererStyle(200),
+            new SvgImageBackEnd()
         );
-        $writer = new \BaconQrCode\Writer($renderer);
+        $writer = new Writer($renderer);
         $qrSvg = $writer->writeString($spaydString);
         
         $qrBase64 = base64_encode($qrSvg);
@@ -95,11 +93,10 @@ public function store(Request $request)
         $datum_format = \Carbon\Carbon::parse($validated['reservation_date'])->format('d. m. Y');
         $hodiny_text = implode(', ', $validated['slot']);
         
-        // Vytvoříme přehledný text pro řádek "Aktivita"
         $vypocet_text = "{$activity->name} ({$datum_format}, {$hodiny_text})";
 
-        // --- TVÁ GENIÁLNÍ PŘEDLOHU PRO ÚČTENKU ---
-       $success_msg = "
+        // --- ÚČTENKA ---
+        $success_msg = "
             <div style='max-width: 420px; background: #ffffff; padding: 35px 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid #f1f5f9; font-family: \"Inter\", sans-serif; margin: 20px auto; text-align: center;'>
                 
                 <div style='margin-bottom: 25px;'>
@@ -150,7 +147,82 @@ public function store(Request $request)
             </div>
         ";
         
-        
+        // --- ODESLÁNÍ NOTIFIKACE NA MOBIL (NTFY) ---
+        // --- ODESLÁNÍ NOTIFIKACE NA MOBIL (NTFY) ---
+        try {
+            // 1. Mapování FontAwesome ikony aktivity na NTFY emoji tag
+            $ntfyTag = 'calendar'; 
+            if (str_contains($activity->icon, 'compass')) {
+                $ntfyTag = 'compass';
+            } elseif (str_contains($activity->icon, 'map')) {
+                $ntfyTag = 'world_map';
+            } elseif (str_contains($activity->icon, 'laptop') || str_contains($activity->icon, 'code')) {
+                $ntfyTag = 'computer';
+            } elseif (str_contains($activity->icon, 'car')) {
+                $ntfyTag = 'red_car';
+            } elseif (str_contains($activity->icon, 'bow') || str_contains($activity->icon, 'bullseye')) {
+                $ntfyTag = 'dart';
+            }
+
+            // 2. Sestavení přehledného textu zprávy
+            $infoDeti = $validated['child_info'] ? " ({$validated['child_info']})" : "";
+            
+            $ntfyMessage = "Aktivita: {$activity->name}\n";
+            $ntfyMessage .= "Termín: {$datum_format} | {$hodiny_text}\n";
+            $ntfyMessage .= "Dítě: {$validated['child_name']} - {$validated['kidsCount']} d.{$infoDeti}\n";
+            $ntfyMessage .= "Rodič: {$validated['parent_name']}\n";
+            $ntfyMessage .= "Kontakt: {$validated['contact']}\n";
+            $ntfyMessage .= "Cena: {$celkova_cena} Kč\n";
+            if (!empty($validated['note'])) {
+                $ntfyMessage .= "Poznámka: {$validated['note']}";
+            }
+
+            // 3. VYGENEROVÁNÍ ODKAZU PRO GOOGLE KALENDÁŘ
+            $googleCalUrl = "";
+            if (!empty($validated['slot'])) {
+                $firstSlot = trim(explode('-', $validated['slot'][0])[0]);
+                $lastSlot = trim(explode('-', end($validated['slot']))[1]);
+                $calDate = \Carbon\Carbon::parse($validated['reservation_date'])->format('Y-m-d');
+
+                // Převod do UTC pro Google
+                $dtStart = \Carbon\Carbon::parse($calDate . ' ' . $firstSlot, 'Europe/Prague')->setTimezone('UTC')->format('Ymd\THis\Z');
+                $dtEnd = \Carbon\Carbon::parse($calDate . ' ' . $lastSlot, 'Europe/Prague')->setTimezone('UTC')->format('Ymd\THis\Z');
+
+                $title = urlencode($activity->name . ' - ' . $validated['child_name']);
+                $details = urlencode("Dítě: {$validated['child_name']} ({$validated['kidsCount']} d.{$infoDeti})\nRodič: {$validated['parent_name']}\nKontakt: {$validated['contact']}\nPoznámka: " . ($validated['note'] ?? ''));
+
+                $googleCalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text={$title}&dates={$dtStart}/{$dtEnd}&details={$details}";
+            }
+
+            // 4. Příprava hlaviček (Headers) pro NTFY
+            $headers = [
+                "Content-Type: text/plain; charset=utf-8",
+                "Title: Nová rezervace!",
+                "Priority: high",
+                "Tags: {$ntfyTag},tada" 
+            ];
+
+            // Pokud máme URL, přidáme tlačítko akce přímo do notifikace!
+            if (!empty($googleCalUrl)) {
+                $headers[] = "Actions: view, Přidat do kalendáře, {$googleCalUrl}";
+            }
+
+            // 5. Odeslání HTTP POST požadavku
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => $ntfyMessage
+                ]
+            ]);
+
+            file_get_contents('https://ntfy.sh/smsky254', false, $context);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Nepodařilo se odeslat NTFY notifikaci: ' . $e->getMessage());
+        }
+
+        // Toto musí být jediný return na samém konci funkce!
         return back()->with('success_msg', $success_msg);
     }
 }

@@ -185,8 +185,21 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::put('/{id}', [App\Http\Controllers\AdminReservationController::class, 'update'])->name('update');
         Route::post('/{id}/toggle', [App\Http\Controllers\AdminReservationController::class, 'toggleStatus'])->name('toggle');
         Route::delete('/{id}', [App\Http\Controllers\AdminReservationController::class, 'destroy'])->name('destroy');
+
+        // NOVÉ ROUTY PRO KALENDÁŘ:
+        Route::get('/{id}/google-calendar', [App\Http\Controllers\AdminReservationController::class, 'googleCalendar'])->name('google');
+        Route::get('/{id}/ics', [App\Http\Controllers\AdminReservationController::class, 'downloadIcs'])->name('ics');
     });
 
+     // Dispečink a mimořádné výluky (zablokování dnů a aktivit)
+    Route::prefix('admin/blocks')->name('admin.blocks.')->group(function () {
+        Route::get('/', [App\Http\Controllers\BlockController::class, 'index'])->name('index');
+        Route::post('/day', [App\Http\Controllers\BlockController::class, 'storeDay'])->name('store_day');
+        Route::delete('/day/{id}', [App\Http\Controllers\BlockController::class, 'destroyDay'])->name('destroy_day');
+        Route::post('/activity/{id}', [App\Http\Controllers\BlockController::class, 'toggleActivity'])->name('toggle_activity');
+    });
+
+    
     // Přepínač editoru
     Route::get('/toggle-editor', function () {
         session()->has('tinymce_enabled')

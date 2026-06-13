@@ -5,7 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentDate = new Date();
     let selectedDate = new Date();
+    
+    // Globální proměnné pro uložení aktuálních cen z vybrané aktivity
     let activePricePerHour = 0;
+    let activePricePerDay = 0;
 
     const calMonthText = document.getElementById('calMonthText');
     const calDaysContainer = document.getElementById('calDaysContainer');
@@ -89,14 +92,31 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // --- NOVÁ, CHYTŘEJŠÍ FUNKCE PRO VÝPOČET CENY ---
     function updatePrice() {
         const checkedCount = document.querySelectorAll('.slot-element:checked').length;
-        const pricingModel = document.querySelector('select[name="pricing"]').value;
-        let totalPrice = pricingModel === 'Celodenní parťák' ? 1500 : checkedCount * activePricePerHour;
+        const pricingSelect = document.querySelector('select[name="pricing"]');
+        const pricingModel = pricingSelect ? pricingSelect.value : '';
+        
+        let totalPrice = 0;
+
+        // Rozhodování na základě zvoleného modelu v roletce
+        if (pricingModel === 'Celodenní parťák') {
+            // Pokud je paušál, bereme denní cenu a nezajímá nás počet zakliknutých hodin
+            totalPrice = activePricePerDay;
+        } else {
+            // Pokud je hodinová, násobíme počet vybraných hodin hodinovou sazbou
+            totalPrice = checkedCount * activePricePerHour;
+        }
+
         priceDisplay.innerText = totalPrice.toLocaleString('cs-CZ') + " Kč";
     }
 
-    document.querySelector('select[name="pricing"]').addEventListener('change', updatePrice);
+    // Posluchač pro změnu cenového modelu (z hodinové na paušál a zpět)
+    const pricingSelectNode = document.querySelector('select[name="pricing"]');
+    if (pricingSelectNode) {
+        pricingSelectNode.addEventListener('change', updatePrice);
+    }
 
     function renderCalendar() {
         const activeRadio = document.querySelector('.activity-radio:checked');
@@ -104,7 +124,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const allowedDays = JSON.parse(activeRadio.getAttribute('data-days'));
         const themeColor = activeRadio.getAttribute('data-color');
-        activePricePerHour = parseFloat(activeRadio.getAttribute('data-price'));
+        
+        // Získání obou cen z HTML atributů zvolené aktivity
+        activePricePerHour = parseFloat(activeRadio.getAttribute('data-price')) || 0;
+        activePricePerDay = parseFloat(activeRadio.getAttribute('data-price-day')) || 0;
 
         calendarStep.style.setProperty('--theme-color', themeColor);
         slotsStep.style.setProperty('--theme-color', themeColor);
@@ -158,6 +181,9 @@ document.addEventListener('DOMContentLoaded', function() {
         calMonthText.innerHTML = `<i class="fa-regular fa-calendar me-2"></i> ${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
         hiddenDateOutput.value = formatDateForInput(selectedDate);
         renderSlots(hiddenDateOutput.value, activeRadio.value);
+        
+        // Zavoláme přepočet ceny rovnou při vykreslení kalendáře
+        updatePrice();
     }
 
     document.querySelectorAll('.activity-radio').forEach(radio => {

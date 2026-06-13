@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'icon', 'price_per_hour', 'color_theme', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'icon', 'price_per_hour', 'price_per_day', 'color_theme', 'is_active'];
 
     public function scheduleRules()
     {
@@ -18,27 +18,55 @@ class Activity extends Model
         return $this->hasMany(Reservation::class);
     }
 
-    // Vytvoří hezký štítek pro zobrazení na kartě
     public function getScheduleTagAttribute()
     {
-        $rules = $this->scheduleRules()->whereNull('date_override')->get();
-        if ($rules->isEmpty()) {
-            return "Dle dohody";
+        // 1. Pokud nemá žádná pravidla, vrátíme výchozí text
+        if ($this->scheduleRules->isEmpty()) {
+            return 'Dle domluvy';
         }
 
-        $daysMap = [0 => 'NE', 1 => 'PO', 2 => 'ÚT', 3 => 'ST', 4 => 'ČT', 5 => 'PÁ', 6 => 'SO'];
-        $days = $rules->pluck('day_of_week')->unique()->map(fn($d) => $daysMap[$d])->toArray();
-        
-        $dayString = implode(', ', $days);
-        if (count($days) > 1) {
-             // Pokud jsou dny např. SO a NE, napíše SO - NE
-             $dayString = reset($days) . ' - ' . end($days);
+        // 2. Vytáhneme si jen unikátní dny z pravidel (bez výjimek)
+        $daysNumbers = $this->scheduleRules->whereNull('date_override')
+                                           ->pluck('day_of_week')
+                                           ->unique()
+                                           ->toArray();
+
+        if (empty($daysNumbers)) {
+            return 'Dle domluvy';
         }
 
-        $firstRule = $rules->first();
-        $start = substr($firstRule->start_time, 0, 5);
-        $end = substr($firstRule->end_time, 0, 5);
+        // 3. Seřadíme dny od Pondělí do Neděle 
+        // (Databáze bere Neděli jako 0, pro řazení ji dočasně chápeme jako 7)
+        usort($daysNumbers, function($a, $b) {
+            $sortA = ($a == 0) ? 7 : $a;
+            $sortB = ($b == 0) ? 7 : $b;
+            return $sortA <=> $sortB;
+        });
 
-        return $dayString . ': ' . $start . ' - ' . $end;
+        // 4. Přeložíme čísla na české zkratky
+        $map = [1 => 'PO', 2 => 'ÚT', 3 => 'ST', 4 => 'ČT', 5 => 'PÁ', 6 => 'SO', 0 => 'NE', 7 => 'NE'];
+        $daysLabels = array_map(function($day) use ($map) {
+            return $map[$day];
+        }, $daysNumbers);
+
+        // 5. Spojíme je čárkou (výsledek: "PO, ST, PÁ")
+        $daysString = implode(', ', $daysLabels);
+
+        // 6. Zpracujeme VŠECHNY unikátní časové bloky (včetně polední pauzy)
+        $timeBlocks = $this->scheduleRules->whereNull('date_override')->unique(function($item) {
+            return $item->start_time . '-' . $item->end_time;
+        })->values();
+
+        if ($timeBlocks->isNotEmpty()) {
+            $timeStrings = [];
+            foreach($timeBlocks as $block) {
+                $timeStrings[] = \Carbon\Carbon::parse($block->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($block->end_time)->format('H:i');
+            }
+            
+            $finalTime = implode(', ', $timeStrings);
+            return $daysString . ': ' . $finalTime;
+        }
+
+        return $daysString;
     }
 }

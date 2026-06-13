@@ -17,13 +17,15 @@
                 @foreach ($menuTree as $item)
                     @if (count($item->children))
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="{{ getMenuUrl($item) }}" id="menu{{ $item->id }}"
-                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle" href="{{ getMenuUrl($item) }}"
+                                id="menu{{ $item->id }}" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
                                 {{ $item->label }}
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="menu{{ $item->id }}">
                                 @foreach ($item->children as $child)
-                                    <li><a class="dropdown-item" href="{{ getMenuUrl($child) }}">{{ $child->label }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ getMenuUrl($child) }}">{{ $child->label }}</a>
+                                    </li>
                                 @endforeach
                             </ul>
                         </li>
@@ -46,25 +48,40 @@
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="admin">
 
                         @if (session('tinymce_disabled'))
-                            <li><a href="{{ route('toggle.tinymce') }}" class="dropdown-item"><i class="fad fa-toggle-off"></i>
+                            <li><a href="{{ route('toggle.tinymce') }}" class="dropdown-item"><i
+                                        class="fad fa-toggle-off"></i>
                                     Zapnout editor</a></li>
                         @else
-                            <li><a href="{{ route('toggle.tinymce') }}" class="dropdown-item"><i class="fad fa-toggle-on"></i>
+                            <li><a href="{{ route('toggle.tinymce') }}" class="dropdown-item"><i
+                                        class="fad fa-toggle-on"></i>
                                     Vypnout editor</a></li>
                         @endif
-                        <li><a class="dropdown-item" href="{{ route('article.index') }}"><i class="fad fa-newspaper"></i> Články</a></li>
-<li><a class="dropdown-item" href="{{ route('page.index') }}"><i class="fad fa-file-alt"></i> Stránky</a></li>
-<li><a class="dropdown-item" href="{{ route('menu.index') }}"><i class="fad fa-bars"></i> Menu</a></li>
-<li><a class="dropdown-item" href="{{ route('admin.activities.index') }}"><i class="fad fa-calendar-check"></i> Rezervace a aktivity</a></li>
-<li><a class="dropdown-item" href="{{ route('diary.admin') }}"><i class="fad fa-book-open"></i> Cestovní deník</a></li>
-<li><a class="dropdown-item" href="{{ route('article.create') }}"><i class="fad fa-plus-circle"></i> Nový článek</a></li>
-<li><a class="dropdown-item" href="{{ route('page.create') }}"><i class="fad fa-plus-square"></i> Nová stránka</a></li>
-<li><a class="dropdown-item" href="{{ route('admin.reservations.index') }}"><i class="fad fa-calendar-alt"></i> Seznam rezervací</a></li>
-<li><a class="dropdown-item" href="{{ route('admin.activities.index') }}"><i class="fad fa-sliders-h"></i> Nastavení aktivit</a></li>
-<li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fad fa-user-cog"></i> Profil</a></li>
-<li><a class="dropdown-item" href="{{ route('images.index') }}"><i class="fa-regular fa-image"></i> Obrázky</a></li>
-<li><a class="dropdown-item" href="{{ route('admin.register') }}"><i class="fad fa-user-plus"></i> Nový uživatel</a></li>
-<li><a class="dropdown-item" href="{{ route('admin.layout-overrides.index') }}"><i class="fad fa-palette"></i> Téma</a></li>
+                        <li><a class="dropdown-item" href="{{ route('article.index') }}"><i class="fad fa-newspaper"></i>
+                                Články</a></li>
+                        <li><a class="dropdown-item" href="{{ route('page.index') }}"><i class="fad fa-file-alt"></i>
+                                Stránky</a></li>
+                        <li><a class="dropdown-item" href="{{ route('menu.index') }}"><i class="fad fa-bars"></i> Menu</a>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ route('diary.admin') }}"><i class="fad fa-book-open"></i>
+                                Cestovní deník</a></li>
+                        <li><a class="dropdown-item" href="{{ route('article.create') }}"><i
+                                    class="fad fa-plus-circle"></i> Nový článek</a></li>
+                        <li><a class="dropdown-item" href="{{ route('page.create') }}"><i class="fad fa-plus-square"></i>
+                                Nová stránka</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.reservations.index') }}"><i
+                                    class="fad fa-calendar-alt"></i> Seznam rezervací</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.activities.index') }}"><i
+                                    class="fad fa-sliders-h"></i> Nastavení aktivit</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.blocks.index') }}"><i class="fad fa-calendar-times"></i> Dispečink a výluky</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fad fa-user-cog"></i>
+                                Profil</a></li>
+                        <li><a class="dropdown-item" href="{{ route('images.index') }}"><i class="fa-regular fa-image"></i>
+                                Obrázky</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.register') }}"><i class="fad fa-user-plus"></i>
+                                Nový uživatel</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.layout-overrides.index') }}"><i
+                                    class="fad fa-palette"></i> Téma</a></li>
+                                    
 
 
                         <li class="dropdown-item">
