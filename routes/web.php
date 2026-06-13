@@ -13,11 +13,13 @@ use App\Http\Controllers\InstallationController;
 use App\Models\Page;
 use App\Models\Article;
 use App\Models\Menu;
-
+use App\Http\Controllers\ReservationApiController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\TravelDiaryController;
 
 /*
 |--------------------------------------------------------------------------
-| 1. INSTALÁTOR CMS (Nyní bezpečně jako první)
+| 1. INSTALÁTOR CMS
 |--------------------------------------------------------------------------
 */
 Route::prefix('install')->name('install.')->group(function () {
@@ -28,32 +30,30 @@ Route::prefix('install')->name('install.')->group(function () {
     Route::post('/admin', [InstallationController::class, 'processAdmin'])->name('admin.process');
 });
 
-
 /*
 |--------------------------------------------------------------------------
-| 2. ZÁCHRANNÁ BRZDA PŘED INSTALACÍ (Chytré přesměrování)
+| 2. ZÁCHRANNÁ BRZDA PŘED INSTALACÍ
 |--------------------------------------------------------------------------
 */
-// Pokud fyzický zámek na disku ještě neexistuje, chytíme jakoukoliv jinou 
-// adresu (včetně domovské stránky) a okamžitě ji přesměrujeme do instalátoru.
 if (!file_exists(storage_path('installed'))) {
     Route::fallback(fn() => redirect('/install'));
-    
-    // Příkaz 'return' způsobí, že Laravel tento soubor přestane číst.
-    // Díky tomu se kód vůbec nedostane k routám níže a nespustí 
-    // předčasně žádný PageController ani databázové dotazy!
     return; 
 }
 
-
 /*
 |--------------------------------------------------------------------------
-| 3. BĚŽNÝ CHOD WEBU (Načte se pouze tehdy, když je už nainstalováno)
+| 3. BĚŽNÝ CHOD WEBU
 |--------------------------------------------------------------------------
 */
 
 // Auth routy
 require __DIR__ . '/auth.php';
+
+// API a nezávislé routy pro frontend
+Route::get('/api/reservation/availability', [ReservationApiController::class, 'getAvailability'])->name('api.reservation.availability');
+Route::get('/rezervace', [ReservationController::class, 'index'])->name('reservation.index');
+Route::post('/rezervace', [ReservationController::class, 'store'])->name('reservation.store');
+Route::get('/denik', [TravelDiaryController::class, 'index'])->name('diary.index');
 
 // Veřejné routy s lokalizací
 Route::group([
@@ -83,21 +83,11 @@ Route::group([
 
 // Administrace
 Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
-    Route::get('/images', [ImageManagerController::class, 'index'])->name('images.index');
-    Route::post('/images', [ImageManagerController::class, 'store'])->name('images.store');
-    Route::delete('/images/{id}', [ImageManagerController::class, 'destroy'])->name('images.destroy');
-
-    Route::post('/menu/reorder', [MenuController::class, 'reorder'])->name('menu.reorder');
-
+    
+    // Nástěnka
     Route::get('/', function () {
-        // Vytáhneme 5 nejnovějších nezveřejněných stránek
         $unpublishedPages = Page::where('published', false)->latest()->take(5)->get();
-        
-        // Vytáhneme 5 nejnovějších nezveřejněných článků
         $unpublishedArticles = Article::where('published', false)->latest()->take(5)->get();
-        
-        // Vytáhneme skryté položky menu 
-        // POZOR: Zkontroluj, jestli se tvůj sloupec pro skrytí jmenuje 'is_visible', 'active' nebo jinak!
         $hiddenMenuItems = Menu::where('published', false)->get(); 
 
         return view('admin.master', compact(
@@ -107,37 +97,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         ));
     })->name('dashboard');
 
+    // Registrace dalších adminů
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('admin.register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('admin.store');
 
-    Route::get('/layout-overrides', [LayoutOverrideController::class, 'index'])->name('admin.layout-overrides.index');
-    Route::get('/layout-overrides/create', [LayoutOverrideController::class, 'create'])->name('admin.layout-overrides.create');
-    Route::post('/layout-overrides', [LayoutOverrideController::class, 'store'])->name('admin.layout-overrides.store');
-    Route::delete('/layout-overrides/{layoutOverride}', [LayoutOverrideController::class, 'destroy'])->name('admin.layout-overrides.destroy');
+    // Obrázky
+    Route::get('/images', [ImageManagerController::class, 'index'])->name('images.index');
+    Route::post('/images', [ImageManagerController::class, 'store'])->name('images.store');
+    Route::delete('/images/{id}', [ImageManagerController::class, 'destroy'])->name('images.destroy');
 
-    Route::prefix('clanky')->name('article.')->group(function () {
-        Route::get('/', [ArticleController::class, 'adminIndex'])->name('index');
-        Route::get('/{id}/edit', [ArticleController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [ArticleController::class, 'update'])->name('update');
-        Route::delete('/{id}', [ArticleController::class, 'destroy'])->name('destroy');
-        Route::post('/{id}/toggle', [ArticleController::class, 'togglePublished'])->name('toggle');
-
-        Route::get('/vytvorit', [ArticleController::class, 'create'])->name('create');
-        Route::post('/vytvorit', [ArticleController::class, 'store'])->name('store');
-    });
-
-    Route::prefix('stranky')->name('page.')->group(function () {
-        Route::get('/', [PageController::class, 'index'])->name('index');
-        Route::get('/{id}/edit', [PageController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [PageController::class, 'update'])->name('update');
-        Route::delete('/{id}', [PageController::class, 'destroy'])->name('destroy');
-        Route::post('/{id}/toggle', [PageController::class, 'togglePublished'])->name('toggle');
-        Route::get('/{id}/nahled', [PageController::class, 'preview'])->name('preview');
-
-        Route::get('/vytvorit', [PageController::class, 'create'])->name('create');
-        Route::post('/vytvorit', [PageController::class, 'store'])->name('store');
-    });
-
+    // Menu
     Route::prefix('menu')->name('menu.')->group(function () {
         Route::get('/', [MenuController::class, 'index'])->name('index');
         Route::get('/index', [MenuController::class, 'index'])->name('index');
@@ -148,8 +117,49 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::put('/{id}', [MenuController::class, 'update'])->name('update');
         Route::delete('/{id}', [MenuController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/nahled', [MenuController::class, 'preview'])->name('preview');
+        Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
     });
 
+    // Cestovní deník
+    Route::prefix('denik')->name('diary.')->group(function () {
+        Route::get('/', [TravelDiaryController::class, 'adminIndex'])->name('admin');
+        Route::get('/vytvorit', [TravelDiaryController::class, 'create'])->name('create');
+        Route::post('/', [TravelDiaryController::class, 'store'])->name('store');
+        Route::get('/{diary}/upravit', [TravelDiaryController::class, 'edit'])->name('edit');
+        Route::put('/{diary}', [TravelDiaryController::class, 'update'])->name('update');
+        Route::delete('/{diary}', [TravelDiaryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Layout Overrides
+    Route::get('/layout-overrides', [LayoutOverrideController::class, 'index'])->name('admin.layout-overrides.index');
+    Route::get('/layout-overrides/create', [LayoutOverrideController::class, 'create'])->name('admin.layout-overrides.create');
+    Route::post('/layout-overrides', [LayoutOverrideController::class, 'store'])->name('admin.layout-overrides.store');
+    Route::delete('/layout-overrides/{layoutOverride}', [LayoutOverrideController::class, 'destroy'])->name('admin.layout-overrides.destroy');
+
+    // Články
+    Route::prefix('clanky')->name('article.')->group(function () {
+        Route::get('/', [ArticleController::class, 'adminIndex'])->name('index');
+        Route::get('/vytvorit', [ArticleController::class, 'create'])->name('create');
+        Route::post('/vytvorit', [ArticleController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [ArticleController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ArticleController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle', [ArticleController::class, 'togglePublished'])->name('toggle');
+    });
+
+    // Stránky
+    Route::prefix('stranky')->name('page.')->group(function () {
+        Route::get('/', [PageController::class, 'index'])->name('index');
+        Route::get('/vytvorit', [PageController::class, 'create'])->name('create');
+        Route::post('/vytvorit', [PageController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [PageController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [PageController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PageController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle', [PageController::class, 'togglePublished'])->name('toggle');
+        Route::get('/{id}/nahled', [PageController::class, 'preview'])->name('preview');
+    });
+
+    // Profil
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'show'])->name('show');        
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -158,6 +168,26 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::delete('/logout', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
+    // Správa aktivit (Rezervační systém)
+    Route::prefix('aktivity')->name('admin.activities.')->group(function () {
+        Route::get('/', [App\Http\Controllers\ActivityController::class, 'index'])->name('index');
+        Route::get('/vytvorit', [App\Http\Controllers\ActivityController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\ActivityController::class, 'store'])->name('store');
+        Route::get('/{activity}/upravit', [App\Http\Controllers\ActivityController::class, 'edit'])->name('edit');
+        Route::put('/{activity}', [App\Http\Controllers\ActivityController::class, 'update'])->name('update');
+        Route::delete('/{activity}', [App\Http\Controllers\ActivityController::class, 'destroy'])->name('destroy');
+    });
+
+    // Správa provedených rezervací účastníků
+    Route::prefix('rezervace-seznam')->name('admin.reservations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\AdminReservationController::class, 'index'])->name('index');
+        Route::get('/{id}/upravit', [App\Http\Controllers\AdminReservationController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\AdminReservationController::class, 'update'])->name('update');
+        Route::post('/{id}/toggle', [App\Http\Controllers\AdminReservationController::class, 'toggleStatus'])->name('toggle');
+        Route::delete('/{id}', [App\Http\Controllers\AdminReservationController::class, 'destroy'])->name('destroy');
+    });
+
+    // Přepínač editoru
     Route::get('/toggle-editor', function () {
         session()->has('tinymce_enabled')
             ? session()->forget('tinymce_enabled')

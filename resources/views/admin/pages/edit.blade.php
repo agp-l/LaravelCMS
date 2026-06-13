@@ -76,7 +76,7 @@
 
                     <div class="mb-3">
                         <label for="content" class="form-label">Obsah (HTML a Shortcodes)</label>
-                        <textarea name="content" id="content" class="form-control" rows="15">{{ old('content', $page->content) }}</textarea>
+                       <textarea name="content" id="page_content_textarea" class="form-control" rows="15">{{ old('content', $page->content) }}</textarea>
                     </div>
 
                     <div class="form-check mb-3">
@@ -122,7 +122,6 @@
 {{-- 3. JAVASCRIPT PRO PŘEPÍNÁNÍ EDITORŮ (TinyMCE vs CodeMirror)       --}}
 {{-- ================================================================= --}}
 @php
-    // Čteme novou proměnnou (tinymce_enabled), kterou jsme změnili ve web.php
     $isTinyMceEnabled = session('tinymce_enabled') === true;
 @endphp
 
@@ -130,10 +129,10 @@
     <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            var textArea = document.getElementById("content");
+            var textArea = document.getElementById("page_content_textarea");
             if (textArea) {
                 tinymce.init({
-                    selector: '#content',
+                    selector: '#page_content_textarea', // Upravené ID
                     height: 600,
                     language: 'cs',
                     plugins: 'lists link image code table',
@@ -151,12 +150,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/monokai.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            var textArea = document.getElementById("content");
+            var textArea = document.getElementById("page_content_textarea"); // Upravené ID
             var form = document.getElementById("page-form");
 
             if (textArea) {
@@ -170,11 +172,10 @@
                 });
                 editor.setSize(null, "600px");
 
-                if (form) {
-                    form.addEventListener("submit", function() {
-                        editor.save(); 
-                    });
-                }
+                // Ukládáme obsah z editoru do fyzické textarey při každé změně
+                editor.on("change", function(cm) {
+                    textArea.value = cm.getValue();
+                });
             }
         });
     </script>

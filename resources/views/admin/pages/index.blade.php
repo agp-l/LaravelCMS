@@ -3,64 +3,106 @@
 @section('title', 'Admin – statické stránky')
 
 @section('content')
-    <div class="container my-5">
+    <div class="container py-5">
 
-        <h3 class="mb-4">Stránky</h3>
+        {{-- Hlavička s flexboxem (Nápis vlevo, tlačítko vpravo) --}}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-0 fw-bold text-dark">Správa stránek</h3>
+                <p class="text-muted small mb-0">Přehled a úprava statických stránek webu</p>
+            </div>
+            <a href="{{ route('page.create') }}" class="btn btn-success shadow-sm rounded-pill px-4 fw-bold">
+                <i class="fa-solid fa-plus me-2"></i> Nová stránka
+            </a>
+        </div>
 
-        <a href="{{ route('page.create') }}" class="btn btn-success mb-3">+ Přidat novou stránku</a>
+        {{-- Karta obalující tabulku --}}
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 px-4 text-uppercase text-muted fw-bold" style="font-size: 0.85rem;">Název a adresa</th>
+                            <th class="py-3 px-4 text-uppercase text-muted fw-bold text-center" style="font-size: 0.85rem;">Stav</th>
+                            <th class="py-3 px-4 text-uppercase text-muted fw-bold text-end" style="font-size: 0.85rem;">Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($pages as $page)
+                            <tr>
+                                {{-- Sloupec: Název a Slug --}}
+                                <td class="px-4 py-3">
+                                    <span class="d-block fw-bold text-dark fs-6">{{ $page->title }}</span>
+                                    @if ($page->slug)
+                                        <span class="text-muted small"><i class="fa-solid fa-link me-1 opacity-50"></i>/{{ $page->slug }}</span>
+                                    @else
+                                        <span class="text-muted small text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i>Bez slugu</span>
+                                    @endif
+                                </td>
 
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th>Název</th>
-                    <th>Stav</th>
-                    <th>Akce</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($pages as $page)
-                    <tr>
-                        <td>{{ $page->title }}</td>
-                        <td>
-                            @if ($page->published)
-                                <span class="badge bg-success">Zveřejněno</span>
-                            @else
-                                <span class="badge bg-secondary">Nezveřejněno</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if ($page->slug)
-                                <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('page.show', ['slug' => $page->slug], false)) }}"
-                                    class="btn btn-sm btn-primary" target="_blank">
-                                    Zobrazit
-                                </a>
-                            @else
-                                <span class="text-muted">Bez slugu</span>
-                            @endif
+                                {{-- Sloupec: Stav (Moderní pill badges) --}}
+                                <td class="px-4 py-3 text-center">
+                                    @if ($page->published)
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2 fw-semibold">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Zveřejněno
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-3 py-2 fw-semibold">
+                                            <i class="fa-solid fa-eye-slash me-1"></i> Nezveřejněno
+                                        </span>
+                                    @endif
+                                </td>
 
-                            <a href="{{ route('page.edit', $page->id) }}" class="btn btn-sm btn-warning">Upravit</a>
+                                {{-- Sloupec: Akce (Flexbox s mezerami a ikonami) --}}
+                                <td class="px-4 py-3 text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        
+                                        @if ($page->slug)
+                                            <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('page.show', ['slug' => $page->slug], false)) }}"
+                                                class="btn btn-sm btn-outline-primary" target="_blank" title="Zobrazit na webu">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </a>
+                                        @endif
 
-                            <form action="{{ route('page.toggle', $page->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    {{ $page->published ? 'Skrýt' : 'Zveřejnit' }}
-                                </button>
-                            </form>
+                                        <a href="{{ route('page.edit', $page->id) }}" class="btn btn-sm btn-outline-warning text-dark" title="Upravit stránku">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> Upravit
+                                        </a>
 
-                            <form action="{{ route('page.destroy', $page->id) }}" method="POST" style="display:inline;"
-                                onsubmit="return confirm('Opravdu smazat tuto stránku?')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger">Smazat</button>
-                            </form>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="3">Žádné stránky zatím neexistují.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                                        <form action="{{ route('page.toggle', $page->id) }}" method="POST">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-secondary" title="{{ $page->published ? 'Skrýt stránku' : 'Zveřejnit stránku' }}">
+                                                <i class="fa-solid {{ $page->published ? 'fa-eye-slash' : 'fa-eye' }} me-1"></i>
+                                                {{ $page->published ? 'Skrýt' : 'Zveřejnit' }}
+                                            </button>
+                                        </form>
+
+                                        <form action="{{ route('page.destroy', $page->id) }}" method="POST"
+                                            onsubmit="return confirm('Opravdu chcete smazat tuto stránku? Tuto akci nelze vzít zpět.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger" title="Smazat">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            {{-- Moderní zobrazení, když je tabulka prázdná --}}
+                            <tr>
+                                <td colspan="3" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fa-regular fa-folder-open display-4 mb-3 opacity-25"></i>
+                                        <h5 class="fw-bold text-dark">Žádné stránky zatím neexistují</h5>
+                                        <p class="small mb-0">Kliknutím na zelené tlačítko vpravo nahoře vytvoříte svou první stránku.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 @endsection

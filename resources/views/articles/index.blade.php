@@ -3,63 +3,86 @@
 @section('title', 'Články')
 
 @section('content')
-    <main>
-        <div class="container px-4 py-2" id="featured-3">
-            <a class="btn btn-secondary mx-1 mb-2"
-                href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.publicIndex', [], false)) }}">
-                Všechny kategorie
+<main class="py-5 bg-light">
+    <div class="container px-4" id="articles-list">
+        
+<div class="mb-5 text-center mx-auto">
+    <h2 class="display-6 fw-bold text-dark mb-4">Články a zajímavosti</h2>
+    
+    @php
+        // Zjistíme, jaká kategorie je zrovna v URL adrese aktivní
+        $activeCategory = request()->route('category');
+    @endphp
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.publicIndex', [], false)) }}"
+           class="btn rounded-pill px-4 fw-medium shadow-sm {{ empty($activeCategory) ? 'btn-info text-white' : 'btn-outline-secondary text-black bg-white' }}">
+            Všechny kategorie
+        </a>
+        
+        @foreach ($categories as $cat)
+            <a href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.byCategory', ['category' => $cat], false)) }}"
+               class="btn rounded-pill px-4 fw-medium shadow-sm {{ $activeCategory === $cat ? 'btn-info text-white' : 'btn-outline-secondary text-black bg-white' }}">
+                {{ $cat }}
             </a>
-            @foreach ($categories as $cat)
-                <a class="btn btn-primary mx-1 mb-2"
-                    href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.byCategory', ['category' => $cat], false)) }}">
-                    {{ $cat }}
-                </a>
-            @endforeach
+        @endforeach
+    </div>
+</div>
 
-            <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-                @foreach ($articles as $article)
-                    <div class="feature col">
+        <div class="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3">
+            @foreach ($articles as $article)
+                @php
+                    // Předpřipravený odkaz na článek, abychom ho nemuseli v HTML pořád opakovat
+                    $articleUrl = \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.show', ['slug' => $article->slug], false));
+                @endphp
+
+                <div class="col">
+                    <div class="card h-100 border-0 bg-white rounded-4 shadow-sm overflow-hidden d-flex flex-column hover-card-up transition">
+                        
                         @if ($article->image)
-                            <div class="image-hover-wrapper mb-2">
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal-{{ $article->id }}">
-                                    <img src="{{ asset('img/blog/thumbs/' . $article->image) }}" alt="{{ $article->title }}"
-                                        class="img-fluid">
-                                    <div class="overlay">
-                                        <i class="bi bi-search"></i>
-                                    </div>
-                                </a>
-                            </div>
-                            <!-- Modal -->
-                            <div class="modal fade" id="imageModal-{{ $article->id }}" tabindex="-1"
-                                aria-labelledby="imageModalLabel-{{ $article->id }}" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-xl">
-                                    <div class="modal-content bg-transparent border-0">
-                                        <div class="modal-body p-0 text-center">
-                                            <img src="{{ asset('img/blog/full/' . $article->image) }}" alt="{{ $article->title }}"
-                                                class="img-fluid rounded shadow">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            <a href="{{ $articleUrl }}" class="text-decoration-none">
+                                <img src="{{ asset('img/blog/thumbs/' . $article->image) }}" 
+                                     alt="{{ $article->title }}" 
+                                     class="card-img-top w-100" 
+                                     style="height: 220px; object-fit: cover;">
+                            </a>
                         @endif
 
-                        <h3 class="fs-5">{{ $article->title }}</h3>
-                        <p class="fw-light lh-base" style="text-align: justify; text-justify: inter-character;">
-                            {{ $article->perex }}
-                        </p>
-                        <a class="btn btn-outline-secondary"
-                            href="{{ \Mcamara\LaravelLocalization\Facades\LaravelLocalization::getLocalizedURL(app()->getLocale(), route('article.show', ['slug' => $article->slug], false)) }}"
-                            role="button">
-                            Zobrazit
-                        </a>
-                    </div>
-                @endforeach
-            </div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <a href="{{ $articleUrl }}" class="text-decoration-none">
+                                <h3 class="h5 fw-bold text-dark mb-3">{{ $article->title }}</h3>
+                            </a>
+                            
+                            <p class="card-text text-muted lh-base mb-4 flex-grow-1">
+                                {{ $article->perex }}
+                            </p>
+                            
+                            <div class="mt-auto">
+                                <a href="{{ $articleUrl }}" class="text-info fw-bold text-decoration-none d-inline-flex align-items-center">
+                                    Číst článek <i class="fa-solid fa-arrow-right ms-2 fs-6"></i>
+                                </a>
+                            </div>
+                        </div>
 
-            {{-- stránkování --}}
-            {{ $articles->withQueryString()->links() }}
+                    </div>
+                </div>
+            @endforeach
         </div>
 
-    </main>
+        <div class="d-flex justify-content-center mt-5 pt-3">
+            {{ $articles->withQueryString()->links() }}
+        </div>
+        
+    </div>
+</main>
+
+<style>
+    .hover-card-up {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-card-up:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>
 @endsection
