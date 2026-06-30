@@ -21,13 +21,18 @@ class ReservationApiController extends Controller
         $date = \Carbon\Carbon::parse($dateStr);
         $dayOfWeek = $date->dayOfWeek;
 
-        // --- NOVÁ KONTROLA: Je aktivita vůbec aktivní? ---
+        // --- HLAVNÍ PŘEPÍNAČ SOUBĚHU AKTIVIT ---
+        // false = lektor je jen jeden, aktivity se nesmí překrývat
+        // true  = lektorů je více, aktivity mohou probíhat ve stejný čas
+        $allowOverlappingActivities = false; 
+
         $activity = \App\Models\Activity::find($activityId);
+        
         if (!$activity || !$activity->is_active) {
-            // Pokud aktivita neexistuje nebo je pozastavená, vrátíme prázdný kalendář
             return response()->json(['date' => $dateStr, 'slots' => [], 'is_blocked' => true]);
         }
-        // --- KONEC NOVÉ KONTROLY ---
+
+        $maxCapacity = $activity->max_capacity ?? 5;
 
         // 1. Globální blokace celého dne
         $globalBlock = \App\Models\ScheduleRule::where('date_override', $dateStr)
@@ -39,7 +44,7 @@ class ReservationApiController extends Controller
             return response()->json(['date' => $dateStr, 'slots' => [], 'is_blocked' => true]);
         }
 
-        // 2. Načtení VŠECH pravidel pro danou aktivitu a seřazení podle času
+        // 2. Načtení rozvrhu pro aktuální aktivitu
         $rules = \App\Models\ScheduleRule::where('activity_id', $activityId)
             ->where(function($query) use ($dateStr, $dayOfWeek) {
                 $query->where('date_override', $dateStr)
@@ -47,36 +52,73 @@ class ReservationApiController extends Controller
                           $q->where('day_of_week', $dayOfWeek)->whereNull('date_override');
                       });
             })
-            ->orderBy('start_time', 'asc') // Důležité: seřadí bloky chronologicky (dopoledne, pak odpoledne)
+            ->orderBy('start_time', 'asc')
             ->get();
 
         if ($rules->isEmpty() || $rules->first()->is_blocked) {
             return response()->json(['date' => $dateStr, 'slots' => [], 'is_blocked' => true]);
         }
 
-        // 3. Načtení existujících rezervací
-        $reservations = \App\Models\Reservation::where('date', $dateStr)
-            ->where('activity_id', $activityId)
-            ->where('payment_status', '!=', 'cancelled')
+        // 3. Načtení ÚPLNĚ VŠECH rezervací pro tento den (napříč všemi aktivitami)
+        $allReservations = \App\Models\Reservation::where('payment_status', '!=', 'cancelled')
+            ->where(function($q) use ($dateStr) {
+                $q->where('date', $dateStr)
+                  ->whereNull('date_end');
+                
+                $q->orWhere(function($sub) use ($dateStr) {
+                    $sub->whereNotNull('date_end')
+                        ->where('date', '<=', $dateStr)
+                        ->where('date_end', '>=', $dateStr);
+                });
+            })
             ->get();
 
-        $responseSlots = [];
-        $maxCapacity = 5;
+        // Filtr pro dny v týdnu (kvůli paušálům)
+        $validReservations = $allReservations->filter(function($res) use ($dayOfWeek) {
+            if ($res->date_end) {
+                $days = $res->recurring_days;
+                if (is_string($days)) {
+                    $days = json_decode($days, true);
+                }
+                if (is_array($days)) {
+                    return in_array($dayOfWeek, $days);
+                }
+                return false; 
+            }
+            return true;
+        });
 
-        // 4. Cyklus přes VŠECHNY nalezené časové bloky pro daný den
+        // Rozdělíme rezervace na ty, co patří k aktuální aktivitě, a na ty ostatní
+        $currentActivityReservations = $validReservations->where('activity_id', $activityId);
+        $otherActivityReservations = $validReservations->where('activity_id', '!=', $activityId);
+
+        $responseSlots = [];
+
         foreach ($rules as $rule) {
             $ruleStart = intval(substr($rule->start_time, 0, 2));
             $ruleEnd = intval(substr($rule->end_time, 0, 2));
 
-            // Vnitřní cyklus pro vygenerování jednotlivých hodin uvnitř konkrétního bloku
             for ($hour = $ruleStart; $hour < $ruleEnd; $hour++) {
                 
                 $slotStart = sprintf('%02d:00', $hour);
                 $slotEnd   = sprintf('%02d:00', $hour + 1);
                 $slotLabel = "{$slotStart} - {$slotEnd}";
 
-                // Filtrování rezervací patřících do tohoto slotu
-                $slotReservations = $reservations->filter(function($res) use ($slotLabel) {
+                // A) Kontrola, zda v tento čas neučíš už jinou aktivitu
+                $isInstructorBusy = false;
+                if (!$allowOverlappingActivities) {
+                    $conflict = $otherActivityReservations->filter(function($res) use ($slotLabel) {
+                        $slotsArray = is_array($res->slots) ? $res->slots : json_decode($res->slots, true);
+                        return is_array($slotsArray) && in_array($slotLabel, $slotsArray);
+                    });
+                    
+                    if ($conflict->isNotEmpty()) {
+                        $isInstructorBusy = true;
+                    }
+                }
+
+                // B) Logika kapacity pro AKTUÁLNÍ aktivitu
+                $slotReservations = $currentActivityReservations->filter(function($res) use ($slotLabel) {
                     $slotsArray = is_array($res->slots) ? $res->slots : json_decode($res->slots, true);
                     return is_array($slotsArray) && in_array($slotLabel, $slotsArray);
                 });
@@ -99,7 +141,8 @@ class ReservationApiController extends Controller
                     }
                 }
 
-                if ($isPrivate || $currentKidsCount >= $maxCapacity) {
+                // Pokud jsi obsazený jinde, nebo je tady plno/soukromá rezervace -> FULL
+                if ($isInstructorBusy || $isPrivate || $currentKidsCount >= $maxCapacity) {
                     $status = 'FULL';
                 }
 
@@ -115,7 +158,7 @@ class ReservationApiController extends Controller
 
         return response()->json([
             'date' => $dateStr,
-            'slots' => $responseSlots, // Tady se už pošlou spojené hodiny z obou bloků
+            'slots' => $responseSlots,
             'is_blocked' => false
         ]);
     }

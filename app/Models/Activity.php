@@ -6,8 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'icon', 'price_per_hour', 'price_per_day', 'color_theme', 'is_active'];
-
+protected $fillable = [
+    'name',
+    'slug', // <-- TOTO TADY MUSÍ BÝT
+    'description',
+    'price_per_hour',
+    'price_per_day',
+    'price_per_month',
+    'color_theme',
+    'icon',
+    'max_capacity',
+    'booking_mode',
+    'pricing_model',
+    'monthly_pass_mode',
+    'show_child_name',
+    'show_kids_count',
+    'show_child_info',
+    'show_note',
+    'custom_field_label',
+    'custom_field_required',
+    'is_active'
+];
     public function scheduleRules()
     {
         return $this->hasMany(ScheduleRule::class);

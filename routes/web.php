@@ -17,6 +17,7 @@ use App\Http\Controllers\ReservationApiController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TravelDiaryController;
 
+
 /*
 |--------------------------------------------------------------------------
 | 1. INSTALÁTOR CMS
@@ -54,6 +55,10 @@ Route::get('/api/reservation/availability', [ReservationApiController::class, 'g
 Route::get('/rezervace', [ReservationController::class, 'index'])->name('reservation.index');
 Route::post('/rezervace', [ReservationController::class, 'store'])->name('reservation.store');
 Route::get('/denik', [TravelDiaryController::class, 'index'])->name('diary.index');
+
+
+// Tvoje nová adresa pro generování QR kódů
+Route::get('/qr-generator', [ReservationController::class, 'generateBtcQr'])->name('qr.generator');
 
 // Veřejné routy s lokalizací
 Route::group([
@@ -198,6 +203,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::delete('/day/{id}', [App\Http\Controllers\BlockController::class, 'destroyDay'])->name('destroy_day');
         Route::post('/activity/{id}', [App\Http\Controllers\BlockController::class, 'toggleActivity'])->name('toggle_activity');
     });
+
+    // Přidej toto k ostatním admin routám:
+    Route::get('/admin/revenue', [\App\Http\Controllers\AdminRevenueController::class, 'index'])->name('admin.revenue.index');
 
     
     // Přepínač editoru

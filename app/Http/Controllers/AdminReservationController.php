@@ -7,42 +7,36 @@ use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-
 class AdminReservationController extends Controller
 {
     // Výpis všech provedených rezervací
     public function index(Request $request)
     {
-        // 1. Získáme parametry z URL (pokud neexistují, nastavíme výchozí)
         $activityFilter = $request->query('activity_id');
-        $sortBy = $request->query('sort_by', 'date_desc'); // Výchozí: od nejnovějších dat
+        $sortBy = $request->query('sort_by', 'date_desc');
         
-        // 2. Základní dotaz (včetně relace na aktivitu)
         $query = Reservation::with('activity');
 
-        // 3. Aplikace filtru aktivity (pokud admin nějakou vybral)
         if (!empty($activityFilter)) {
             $query->where('activity_id', $activityFilter);
         }
 
-        // 4. Aplikace řazení
         switch ($sortBy) {
             case 'date_asc':
-                $query->orderBy('date', 'asc'); // Od nejstarších termínů (blížících se)
+                $query->orderBy('date', 'asc');
                 break;
             case 'date_desc':
-                $query->orderBy('date', 'desc'); // Od nejnovějších
+                $query->orderBy('date', 'desc');
                 break;
             case 'created_desc':
-                $query->orderBy('created_at', 'desc'); // Kdo se přihlásil naposledy
+                $query->orderBy('created_at', 'desc');
                 break;
             default:
                 $query->orderBy('date', 'desc');
                 break;
         }
 
-        // 5. Spustíme dotaz a pošleme do pohledu i existující aktivity pro select box
-        $reservations = $query->paginate(20)->withQueryString(); // withQueryString() drží filtr i při přechodu na další stránku
+        $reservations = $query->paginate(20)->withQueryString();
         $activities = Activity::orderBy('name')->get();
 
         return view('admin.reservations.index', compact('reservations', 'activities', 'activityFilter', 'sortBy'));
@@ -58,43 +52,47 @@ class AdminReservationController extends Controller
     }
 
     // Uložení změn v rezervaci
-    public function update(Request $request, $id)
+public function update(Request $request, $id)
     {
         $reservation = Reservation::findOrFail($id);
 
         $validated = $request->validate([
-            'date'           => 'required|date',
-            'activity_id'    => 'required|integer|exists:activities,id',
-            'child_name'     => 'required|string|max:255',
-            'kids_count'     => 'required|integer|min:1',
-            'child_info'     => 'nullable|string|max:500', // PŘIDÁNO: věk dětí
-            'parent_name'    => 'required|string|max:255',
-            'contact'        => 'required|string|max:255',
-            'note'           => 'nullable|string|max:1000', // PŘIDÁNO: poznámka
-            'sharing_type'   => 'required|string',
-            'pricing_model'  => 'required|string',
-            'total_price'    => 'required|numeric|min:0',
-            'payment_status' => 'required|string|in:pending,paid,cancelled',
-            'slots'          => 'required|string', // Přichází jako text oddělený čárkou
+            'date'               => 'required|date',
+            'date_end'           => 'nullable|date',
+            'recurring_days'     => 'nullable|array', 
+            'activity_id'        => 'required|integer|exists:activities,id',
+            'child_name'         => 'nullable|string|max:255', 
+            'kids_count'         => 'nullable|integer|min:1',  
+            'child_info'         => 'nullable|string|max:500',
+            'parent_name'        => 'required|string|max:255',
+            'contact'            => 'required|string|max:255',
+            'note'               => 'nullable|string|max:1000',
+            'custom_field_value' => 'nullable|string|max:1000',
+            'sharing_type'       => 'required|string',
+            'pricing_model'      => 'required|string',
+            'total_price'        => 'required|numeric|min:0',
+            'payment_status'     => 'required|string|in:pending,paid,cancelled',
+            'slots'              => 'required|array', 
         ]);
 
-        // Převedeme text řetězec slotů zpět na čisté PHP pole pro databázi
-        $slotsArray = array_map('trim', explode(',', $validated['slots']));
-
         $reservation->update([
-            'date'           => $validated['date'],
-            'activity_id'    => $validated['activity_id'],
-            'child_name'     => $validated['child_name'],
-            'kids_count'     => $validated['kids_count'],
-            'child_info'     => $validated['child_info'] ?? '', // PŘIDÁNO
-            'parent_name'    => $validated['parent_name'],
-            'contact'        => $validated['contact'],
-            'note'           => $validated['note'] ?? '', // PŘIDÁNO
-            'sharing_type'   => $validated['sharing_type'],
-            'pricing_model'  => $validated['pricing_model'],
-            'total_price'    => $validated['total_price'],
-            'payment_status' => $validated['payment_status'],
-            'slots'          => $slotsArray,
+            'date'               => $validated['date'],
+            'date_end'           => $validated['date_end'] ?? null,
+            // OPRAVA: Nepoužíváme json_encode, předáme čisté pole a model si to přežvýká sám
+            'recurring_days'     => $validated['recurring_days'] ?? null,
+            'activity_id'        => $validated['activity_id'],
+            'child_name'         => $validated['child_name'] ?? 'Nezadáno',
+            'kids_count'         => $validated['kids_count'] ?? 1,
+            'child_info'         => $validated['child_info'] ?? '',
+            'parent_name'        => $validated['parent_name'],
+            'contact'            => $validated['contact'],
+            'note'               => $validated['note'] ?? '',
+            'custom_field_value' => $validated['custom_field_value'] ?? null,
+            'sharing_type'       => $validated['sharing_type'],
+            'pricing_model'      => $validated['pricing_model'],
+            'total_price'        => $validated['total_price'],
+            'payment_status'     => $validated['payment_status'],
+            'slots'              => $validated['slots'], 
         ]);
 
         return redirect()->route('admin.reservations.index')->with('success', 'Rezervace byla úspěšně upravena.');
@@ -119,10 +117,6 @@ class AdminReservationController extends Controller
         return redirect()->route('admin.reservations.index')->with('success', 'Rezervace byla smazána.');
     }
 
-    
-
-    
-
     // 1. Generování odkazu pro Google Kalendář
     public function googleCalendar($id)
     {
@@ -136,11 +130,9 @@ class AdminReservationController extends Controller
             return back()->with('error', 'Chybí hodiny rezervace.');
         }
 
-        // Vezmeme začátek prvního bloku a konec posledního bloku
         $firstSlot = trim(explode('-', $slotsArray[0])[0]);
         $lastSlot = trim(explode('-', end($slotsArray))[1]);
 
-        // Pro Google převedeme čas do UTC (odstraní problémy s letním časem)
         $dtStart = \Carbon\Carbon::parse($date . ' ' . $firstSlot, 'Europe/Prague')->setTimezone('UTC')->format('Ymd\THis\Z');
         $dtEnd = \Carbon\Carbon::parse($date . ' ' . $lastSlot, 'Europe/Prague')->setTimezone('UTC')->format('Ymd\THis\Z');
 
@@ -161,7 +153,6 @@ class AdminReservationController extends Controller
         
         $slotsArray = is_array($reservation->slots) ? $reservation->slots : json_decode($reservation->slots, true) ?? [];
         
-        // Hlavička iCalendar souboru
         $icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Dobrodruzi//NONSGML v1.0//EN\r\n";
         
         foreach ($slotsArray as $slot) {
@@ -187,17 +178,10 @@ class AdminReservationController extends Controller
         }
         $icsContent .= "END:VCALENDAR\r\n";
 
-        // Vytvoření bezpečného názvu souboru
         $filename = "rezervace_" . Str::slug($reservation->child_name) . "_{$date}.ics";
 
-        // Odeslání souboru prohlížeči
         return response($icsContent)
             ->header('Content-Type', 'text/calendar; charset=utf-8')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }
-
-
-
-
-
 }

@@ -66,10 +66,30 @@
 
                                     <div class="d-flex align-items-center mb-1">
                                         <i class="fa-regular fa-calendar text-muted me-2"></i>
-                                        <span class="fw-bold text-dark fs-6">{{ \Carbon\Carbon::parse($res->date)->format('d. m. Y') }}</span>
+                                        <span class="fw-bold text-dark fs-6">
+                                            @if($res->date_end)
+                                                Od {{ \Carbon\Carbon::parse($res->date)->format('d. m.') }} do {{ \Carbon\Carbon::parse($res->date_end)->format('d. m. Y') }}
+                                            @else
+                                                {{ \Carbon\Carbon::parse($res->date)->format('d. m. Y') }}
+                                            @endif
+                                        </span>
                                     </div>
+
+                                    @if($res->date_end && $res->recurring_days)
+                                        <div class="text-muted small mb-2">
+                                            <i class="fa-solid fa-rotate-right me-1"></i> Pravidelně: 
+                                            @php
+                                                $daysMap = [1 => 'Po', 2 => 'Út', 3 => 'St', 4 => 'Čt', 5 => 'Pá', 6 => 'So', 0 => 'Ne'];
+                                                $recDays = is_array($res->recurring_days) ? $res->recurring_days : json_decode($res->recurring_days, true);
+                                                if (is_array($recDays)) {
+                                                    $daysNames = array_map(function($d) use ($daysMap) { return $daysMap[$d] ?? $d; }, $recDays);
+                                                    echo implode(', ', $daysNames);
+                                                }
+                                            @endphp
+                                        </div>
+                                    @endif
                                     
-                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                    <div class="d-flex flex-wrap gap-1 mb-2 mt-2">
                                         @php
                                             $slotsArray = is_array($res->slots) ? $res->slots : json_decode($res->slots, true) ?? [];
                                         @endphp
@@ -93,12 +113,18 @@
                                 <td class="px-4 py-3 align-top">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
                                         <span class="d-block text-dark fw-bold fs-6">{{ $res->child_name }}</span>
-                                        <span class="badge bg-secondary rounded-pill fw-normal" style="font-size: 0.75rem;">{{ $res->kids_count }} </span>
+                                        <span class="badge bg-secondary rounded-pill fw-normal" style="font-size: 0.75rem;">{{ $res->kids_count }} d.</span>
                                     </div>
                                     
                                     @if(!empty($res->child_info))
                                         <span class="d-block text-muted small fst-italic mb-2" style="font-size: 0.8rem;">
                                             Věk: {{ $res->child_info }}
+                                        </span>
+                                    @endif
+
+                                    @if(!empty($res->custom_field_value))
+                                        <span class="d-block text-primary small fw-bold mb-2" style="font-size: 0.8rem;">
+                                            Vlastní údaj: <span class="fw-normal text-dark">{{ $res->custom_field_value }}</span>
                                         </span>
                                     @endif
 

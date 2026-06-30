@@ -75,16 +75,17 @@
                                 </td>
 
                                 {{-- Štítek z pravidel (schedule_rules) --}}
-                               {{-- Štítek rozvrhu --}}
-<td class="px-4 py-3">
-    @if($activity->schedule_tag)
-        <span class="badge bg-light text-dark border px-2 py-1 fw-normal">
-            <i class="fa-regular fa-clock me-1 text-muted"></i> {{ $activity->schedule_tag }}
-        </span>
-    @else
-        <span class="text-muted small">Dle domluvy / Bez rozvrhu</span>
-    @endif
-</td>
+                                {{-- Štítek rozvrhu --}}
+                                <td class="px-4 py-3">
+                                    @if ($activity->schedule_tag)
+                                        <span class="badge bg-light text-dark border px-2 py-1 fw-normal">
+                                            <i class="fa-regular fa-clock me-1 text-muted"></i>
+                                            {{ $activity->schedule_tag }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">Dle domluvy / Bez rozvrhu</span>
+                                    @endif
+                                </td>
                                 {{-- Akce --}}
                                 <td class="px-4 py-3 text-end">
                                     <div class="d-flex justify-content-end gap-2">

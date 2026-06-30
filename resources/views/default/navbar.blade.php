@@ -72,7 +72,13 @@
                                     class="fad fa-calendar-alt"></i> Seznam rezervací</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.activities.index') }}"><i
                                     class="fad fa-sliders-h"></i> Nastavení aktivit</a></li>
-                        <li><a class="dropdown-item" href="{{ route('admin.blocks.index') }}"><i class="fad fa-calendar-times"></i> Dispečink a výluky</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.blocks.index') }}"><i
+                                    class="fad fa-calendar-times"></i> Dispečink a výluky</a></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ route('admin.revenue.index') }}">
+                                <i class="fa-solid fa-wallet me-2"></i> Finanční přehled
+                            </a>
+                        </li>
                         <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fad fa-user-cog"></i>
                                 Profil</a></li>
                         <li><a class="dropdown-item" href="{{ route('images.index') }}"><i class="fa-regular fa-image"></i>
@@ -81,7 +87,7 @@
                                 Nový uživatel</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.layout-overrides.index') }}"><i
                                     class="fad fa-palette"></i> Téma</a></li>
-                                    
+
 
 
                         <li class="dropdown-item">

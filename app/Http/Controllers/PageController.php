@@ -23,14 +23,18 @@ class PageController extends Controller
     
         $text = $page->content;
 
-        // OPRAVENO: Odstranena uzaviraci zavorka ve str_contains
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
             }, $text);
         }
 
+        // 1. KROK: Najdeme a vyřízneme [hlavicka ...]. 
         $headerData = $this->extractHeaderData($text);
+
+        // 2. KROK: Ve zbytku textu najdeme všechny [blok ...] a přeměníme je rovnou na HTML.
+        $text = $this->parseBlocks($text);
+
         $page->content = $text;
 
         return view('pages.page-detail', [
@@ -57,14 +61,18 @@ class PageController extends Controller
 
         $text = $page->content;
 
-        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
             }, $text);
         }
 
+        // 1. KROK: Najdeme a vyřízneme [hlavicka ...]. 
         $headerData = $this->extractHeaderData($text);
+
+        // 2. KROK: Ve zbytku textu najdeme všechny [blok ...] a přeměníme je rovnou na HTML.
+        $text = $this->parseBlocks($text);
+
         $page->content = $text;
 
         return view('pages.page-detail', [
@@ -80,14 +88,18 @@ class PageController extends Controller
 
         $text = $page->content;
 
-        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
             }, $text);
         }
 
+        // 1. KROK: Najdeme a vyřízneme [hlavicka ...]. 
         $headerData = $this->extractHeaderData($text);
+
+        // 2. KROK: Ve zbytku textu najdeme všechny [blok ...] a přeměníme je rovnou na HTML.
+        $text = $this->parseBlocks($text);
+
         $page->content = $text;
 
         return view('pages.page-detail', [
@@ -241,14 +253,18 @@ class PageController extends Controller
 
         $text = $page->content;
 
-        // OPRAVENO
         if (str_contains($text, '[qr_platba')) {
             $text = preg_replace_callback('/\[qr_platba\s*(.*?)\]/', function ($matches) {
                 return \Illuminate\Support\Facades\Blade::render("<x-qr-payment {$matches[1]} />");
             }, $text);
         }
 
+        // 1. KROK: Najdeme a vyřízneme [hlavicka ...]. 
         $headerData = $this->extractHeaderData($text);
+
+        // 2. KROK: Ve zbytku textu najdeme všechny [blok ...] a přeměníme je rovnou na HTML.
+        $text = $this->parseBlocks($text);
+
         $page->content = $text;
 
         return view('pages.page-detail', [
@@ -258,11 +274,14 @@ class PageController extends Controller
         ]);
     }
 
-    // Pomocna funkce pro extrakci hlavicky z textu
+    // --- POMOCNÉ FUNKCE PRO PARSOVÁNÍ ---
+
+    // 1. Extrakce hlavičky (Odstraní ji z textu a předá data layoutu)
     private function extractHeaderData(&$content)
     {
         $headerData = null;
         
+        // Hledá pouze [hlavicka ...]
         if (preg_match('/\[hlavicka\s+(.*?)\]/s', $content, $matches)) {
             $attrString = $matches[1];
             
@@ -272,9 +291,43 @@ class PageController extends Controller
                 $headerData[$key] = $attrMatches[2][$index];
             }
             
+            // Vyřízne hlavičku z obsahu, aby se nevypsala dvakrát
             $content = str_replace($matches[0], '', $content);
         }
         
         return $headerData;
+    }
+
+    // 2. Parsování inline bloků (Převede je na HTML přímo v textu)
+    private function parseBlocks($content)
+    {
+        if (!$content) return '';
+
+        // Hledá pouze [blok ...] kdekoli v textu
+        return preg_replace_callback('/\[blok\s+(.*?)\]/s', function ($matches) {
+            $attrString = $matches[1];
+            
+            preg_match_all('/(\w+)="([^"]*)"/s', $attrString, $attrMatches);
+            $attributes = [];
+            foreach ($attrMatches[1] as $index => $key) {
+                $attributes[$key] = $attrMatches[2][$index];
+            }
+            
+            $type = $attributes['typ'] ?? null;
+            if (!$type) return ''; 
+
+            // Hledáme šablonu ve složce blocks nebo headers
+            $viewPath = 'default.blocks.' . $type;
+            if (!view()->exists($viewPath)) {
+                $viewPath = 'default.headers.' . $type;
+            }
+
+            if (view()->exists($viewPath)) {
+                return view($viewPath, $attributes)->render();
+            }
+            
+            return '';
+            
+        }, $content);
     }
 }
