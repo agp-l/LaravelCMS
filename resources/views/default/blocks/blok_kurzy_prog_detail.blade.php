@@ -46,7 +46,8 @@
                     <div
                         class="text-info small text-uppercase tracking-wider fw-bold mb-3 d-inline-flex align-items-center">
                         <hr class="d-inline-block border-info border-1 opacity-50 my-0 me-2" style="width: 24px;">
-                        {{ $badge }}
+                        {{ $badge }} 
+                        <hr class="d-inline-block border-info border-1 opacity-50 my-0 ms-2" style="width: 24px;">
                     </div>
                 @endif
 

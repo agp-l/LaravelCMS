@@ -2,9 +2,9 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Počítač: dobrodruzi.cz
--- Vytvořeno: Stř 10. čen 2026, 20:32
--- Verze serveru: 8.0.45-36
+-- Počítač: db.dw141.webglobe.com
+-- Vytvořeno: Úte 30. čen 2026, 23:55
+-- Verze serveru: 8.0.46-37
 -- Verze PHP: 8.1.34
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -20,6 +20,37 @@ SET time_zone = "+00:00";
 --
 -- Databáze: `dobrodruzicz5`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Struktura tabulky `activities`
+--
+
+CREATE TABLE `activities` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `max_capacity` int DEFAULT '5',
+  `booking_mode` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'both' COMMENT 'individual, shared, both',
+  `pricing_model` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'hourly' COMMENT 'hourly, daily, monthly',
+  `monthly_pass_mode` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'all_days',
+  `show_child_name` tinyint(1) DEFAULT '1',
+  `show_kids_count` tinyint(1) DEFAULT '1',
+  `show_child_info` tinyint(1) DEFAULT '1',
+  `show_note` tinyint(1) DEFAULT '1',
+  `custom_field_label` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `custom_field_required` tinyint(1) DEFAULT '0',
+  `price_per_hour` decimal(8,2) NOT NULL DEFAULT '0.00',
+  `price_per_day` int NOT NULL DEFAULT '0',
+  `price_per_month` decimal(10,2) DEFAULT NULL,
+  `color_theme` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '#0d6efd',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -249,6 +280,52 @@ CREATE TABLE `password_reset_tokens` (
 -- --------------------------------------------------------
 
 --
+-- Struktura tabulky `reservations`
+--
+
+CREATE TABLE `reservations` (
+  `id` bigint UNSIGNED NOT NULL,
+  `date` date NOT NULL,
+  `date_end` date DEFAULT NULL,
+  `recurring_days` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `slots` json NOT NULL,
+  `child_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `kids_count` int NOT NULL DEFAULT '1',
+  `child_info` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `parent_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contact` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `custom_field_value` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pricing_model` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sharing_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `total_price` decimal(8,2) NOT NULL,
+  `payment_status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `activity_id` bigint UNSIGNED NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktura tabulky `schedule_rules`
+--
+
+CREATE TABLE `schedule_rules` (
+  `id` bigint UNSIGNED NOT NULL,
+  `day_of_week` tinyint UNSIGNED DEFAULT NULL,
+  `date_override` date DEFAULT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `activity_id` bigint UNSIGNED DEFAULT NULL,
+  `is_blocked` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Struktura tabulky `sessions`
 --
 
@@ -259,6 +336,20 @@ CREATE TABLE `sessions` (
   `user_agent` text COLLATE utf8mb4_unicode_ci,
   `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `last_activity` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktura tabulky `timeline_posts`
+--
+
+CREATE TABLE `timeline_posts` (
+  `id` int NOT NULL,
+  `created_at` datetime NOT NULL,
+  `icon_class` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `map_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -281,6 +372,13 @@ CREATE TABLE `users` (
 --
 -- Indexy pro exportované tabulky
 --
+
+--
+-- Indexy pro tabulku `activities`
+--
+ALTER TABLE `activities`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `activities_slug_unique` (`slug`);
 
 --
 -- Indexy pro tabulku `articles`
@@ -374,12 +472,32 @@ ALTER TABLE `password_reset_tokens`
   ADD PRIMARY KEY (`email`);
 
 --
+-- Indexy pro tabulku `reservations`
+--
+ALTER TABLE `reservations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `reservations_activity_id_foreign` (`activity_id`);
+
+--
+-- Indexy pro tabulku `schedule_rules`
+--
+ALTER TABLE `schedule_rules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `schedule_rules_activity_id_foreign` (`activity_id`);
+
+--
 -- Indexy pro tabulku `sessions`
 --
 ALTER TABLE `sessions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `sessions_user_id_index` (`user_id`),
   ADD KEY `sessions_last_activity_index` (`last_activity`);
+
+--
+-- Indexy pro tabulku `timeline_posts`
+--
+ALTER TABLE `timeline_posts`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexy pro tabulku `users`
@@ -391,6 +509,12 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT pro tabulky
 --
+
+--
+-- AUTO_INCREMENT pro tabulku `activities`
+--
+ALTER TABLE `activities`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pro tabulku `articles`
@@ -453,6 +577,24 @@ ALTER TABLE `page_histories`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pro tabulku `reservations`
+--
+ALTER TABLE `reservations`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pro tabulku `schedule_rules`
+--
+ALTER TABLE `schedule_rules`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pro tabulku `timeline_posts`
+--
+ALTER TABLE `timeline_posts`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pro tabulku `users`
 --
 ALTER TABLE `users`
@@ -467,6 +609,18 @@ ALTER TABLE `users`
 --
 ALTER TABLE `page_histories`
   ADD CONSTRAINT `page_histories_ibfk_1` FOREIGN KEY (`page_id`) REFERENCES `pages` (`id`) ON DELETE CASCADE;
+
+--
+-- Omezení pro tabulku `reservations`
+--
+ALTER TABLE `reservations`
+  ADD CONSTRAINT `reservations_activity_id_foreign` FOREIGN KEY (`activity_id`) REFERENCES `activities` (`id`) ON DELETE RESTRICT;
+
+--
+-- Omezení pro tabulku `schedule_rules`
+--
+ALTER TABLE `schedule_rules`
+  ADD CONSTRAINT `schedule_rules_activity_id_foreign` FOREIGN KEY (`activity_id`) REFERENCES `activities` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
