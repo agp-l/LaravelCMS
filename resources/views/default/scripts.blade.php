@@ -253,3 +253,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+
+
+
+<!-- Highlight.js pro zvýraznění kódu -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+
+<script>
+    // Inicializace zvýraznění syntaxe
+    hljs.highlightAll();
+
+    // Funkce pro kopírování
+    document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const btn = e.currentTarget;
+            let targetElement = btn.nextElementSibling;
+
+            // Záchranná brzda: Pokud hned vedle tlačítka není kód (např. kvůli obalovacím divům z CMS),
+            // podíváme se do celého rodičovského bloku a najdeme <pre> nebo <code> tam.
+            if (!targetElement || (targetElement.tagName !== 'PRE' && targetElement.tagName !== 'CODE')) {
+                const parent = btn.parentElement;
+                if (parent) {
+                    targetElement = parent.querySelector('pre') || parent.querySelector('code');
+                }
+            }
+
+            // Pokud jsme kód našli, zkopírujeme ho
+            if (targetElement) {
+                const code = targetElement.innerText;
+                navigator.clipboard.writeText(code).then(() => {
+                    btn.textContent = 'Zkopírováno!';
+                    setTimeout(() => btn.textContent = 'Kopírovat', 1500);
+                }).catch(err => {
+                    console.error("Kopírování selhalo:", err);
+                });
+            } else {
+                console.error("Nenašel se kód ke zkopírování. Zkontroluj, zda je tlačítko a kód ve stejném obalovacím prvku.");
+            }
+        });
+    });
+</script>

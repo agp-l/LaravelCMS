@@ -12,6 +12,10 @@
 <!-- Bootstrap 5 CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+
 <style>
     .carousel-item {
         position: relative;
@@ -232,228 +236,268 @@
 
 
     .card-img-top {
-    height: 200px;
-    object-fit: cover;
-}
+        height: 200px;
+        object-fit: cover;
+    }
 </style>
 
 <style>
     /* ===== Mobilní zarovnání textu ===== */
-@media (max-width: 767.98px) {
+    @media (max-width: 767.98px) {
 
- 
 
-      .lead {
-        font-size: 1rem !important;   /* standardní velikost textu */
-        font-weight: 400 !important;  /* zruší lehké zvýraznění */
-        line-height: 1.6;
-         justify-content: flex-start !important;
-    }
+
+        .lead {
+            font-size: 1rem !important;
+            /* standardní velikost textu */
+            font-weight: 400 !important;
+            /* zruší lehké zvýraznění */
+            line-height: 1.6;
+            justify-content: flex-start !important;
+        }
 
 
     }
 </style>
 
 <style>
-/* KARTY AKTIVIT */
-.activity-card {
-    border: 2px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: #ffffff;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-}
+    /* KARTY AKTIVIT */
+    .activity-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #ffffff;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
 
-.activity-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    border-color: #cbd5e1;
-}
+    .activity-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
 
-/* Aktivní stav karty - barva se pak bude měnit dynamicky podle DB */
-.activity-card.active {
-    border-color: var(--theme-color, #0d6efd);
-    background-color: #f8fafc;
-    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-}
+    /* Aktivní stav karty - barva se pak bude měnit dynamicky podle DB */
+    .activity-card.active {
+        border-color: var(--theme-color, #0d6efd);
+        background-color: #f8fafc;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    }
 
-.activity-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--theme-color, #64748b);
-}
+    .activity-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: var(--theme-color, #64748b);
+    }
 
-.activity-price-tag {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: #f1f5f9;
-    padding: 0.25rem 0.75rem;
-    border-radius: 2rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #475569;
-}
+    .activity-price-tag {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #f1f5f9;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #475569;
+    }
 
-.activity-schedule-tag {
-    display: inline-block;
-    margin-top: 1rem;
-    font-size: 0.8rem;
-    background: #e0f2fe;
-    color: #0369a1;
-    padding: 0.4rem 0.8rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-}
+    .activity-schedule-tag {
+        display: inline-block;
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+    }
 
-/* KALENDÁŘ - KROK 2 */
-.step-container {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-}
+    /* KALENDÁŘ - KROK 2 */
+    .step-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    }
 
-.step-title {
-    display: flex;
-    align-items: center;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    color: #1e293b;
-}
+    .step-title {
+        display: flex;
+        align-items: center;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        color: #1e293b;
+    }
 
-.step-number {
-    background: #1e293b;
-    color: #ffffff;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    margin-right: 1rem;
-    font-size: 1rem;
-}
+    .step-number {
+        background: #1e293b;
+        color: #ffffff;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 1rem;
+        font-size: 1rem;
+    }
 
-/* Tlačítka dnů v kalendáři */
-.day-btn {
-    min-width: 80px;
-    padding: 0.75rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 0.75rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-}
+    /* Tlačítka dnů v kalendáři */
+    .day-btn {
+        min-width: 80px;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
 
-/* Nedostupné dny pro danou aktivitu */
-.day-btn.disabled {
-    opacity: 0.4;
-    background: #f8fafc;
-    cursor: not-allowed;
-    border-style: dashed;
-}
+    /* Nedostupné dny pro danou aktivitu */
+    .day-btn.disabled {
+        opacity: 0.4;
+        background: #f8fafc;
+        cursor: not-allowed;
+        border-style: dashed;
+    }
 
-/* Dostupný den */
-.day-btn.available:hover {
-    border-color: var(--theme-color, #0d6efd);
-    background: #f8fafc;
-}
+    /* Dostupný den */
+    .day-btn.available:hover {
+        border-color: var(--theme-color, #0d6efd);
+        background: #f8fafc;
+    }
 
-/* Vybraný den */
-.day-btn.active {
-    background: var(--theme-color, #0d6efd);
-    border-color: var(--theme-color, #0d6efd);
-    color: white !important;
-}
+    /* Vybraný den */
+    .day-btn.active {
+        background: var(--theme-color, #0d6efd);
+        border-color: var(--theme-color, #0d6efd);
+        color: white !important;
+    }
 
-.day-btn.active span, .day-btn.active strong {
-    color: white !important;
-}
+    .day-btn.active span,
+    .day-btn.active strong {
+        color: white !important;
+    }
 
-/* HODINY A FORMULÁŘ - KROK 3 */
-.slot-checkbox-label {
-    display: block;
-    cursor: pointer;
-}
+    /* HODINY A FORMULÁŘ - KROK 3 */
+    .slot-checkbox-label {
+        display: block;
+        cursor: pointer;
+    }
 
-.slot-checkbox-label input {
-    display: none;
-}
+    .slot-checkbox-label input {
+        display: none;
+    }
 
-.slot-box {
-    border: 2px solid #e2e8f0;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    text-align: center;
-    font-weight: 700;
-    color: #475569;
-    transition: all 0.2s;
-}
+    .slot-box {
+        border: 2px solid #e2e8f0;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        text-align: center;
+        font-weight: 700;
+        color: #475569;
+        transition: all 0.2s;
+    }
 
-.slot-checkbox-label input:checked + .slot-box {
-    background: var(--theme-color, #0d6efd);
-    border-color: var(--theme-color, #0d6efd);
-    color: white;
-}
+    .slot-checkbox-label input:checked+.slot-box {
+        background: var(--theme-color, #0d6efd);
+        border-color: var(--theme-color, #0d6efd);
+        color: white;
+    }
 
-.slot-checkbox-label.disabled .slot-box {
-    opacity: 0.5;
-    background: #f1f5f9;
-    text-decoration: none;
-    border-style: dashed;
-    cursor: not-allowed;
-}
+    .slot-checkbox-label.disabled .slot-box {
+        opacity: 0.5;
+        background: #f1f5f9;
+        text-decoration: none;
+        border-style: dashed;
+        cursor: not-allowed;
+    }
 
 
-/* Plynulé scrollování a skrytí scrollbaru pro kalendář */
-.hide-scroll {
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;  /* IE a Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-.hide-scroll::-webkit-scrollbar {
-    display: none; /* Chrome, Safari a Opera */
-}
-.day-btn {
-    flex: 0 0 auto; /* Zabrání smrsknutí tlačítek dnů k sobě */
-}
+    /* Plynulé scrollování a skrytí scrollbaru pro kalendář */
+    .hide-scroll {
+        scroll-behavior: smooth;
+        -ms-overflow-style: none;
+        /* IE a Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
 
-/* Oprava hover efektu pro aktivní den, aby text nezmizel */
-.day-btn.active:hover {
-    background: var(--theme-color, #0d6efd) !important;
-    border-color: var(--theme-color, #0d6efd) !important;
-}
+    .hide-scroll::-webkit-scrollbar {
+        display: none;
+        /* Chrome, Safari a Opera */
+    }
 
-.day-btn.active:hover span, 
-.day-btn.active:hover strong {
-    color: white !important;
-}
+    .day-btn {
+        flex: 0 0 auto;
+        /* Zabrání smrsknutí tlačítek dnů k sobě */
+    }
 
+    /* Oprava hover efektu pro aktivní den, aby text nezmizel */
+    .day-btn.active:hover {
+        background: var(--theme-color, #0d6efd) !important;
+        border-color: var(--theme-color, #0d6efd) !important;
+    }
+
+    .day-btn.active:hover span,
+    .day-btn.active:hover strong {
+        color: white !important;
+    }
 </style>
 
 <style>
     /* Vlastní responzivní třída pro karty */
     .card-responsive {
         background-color: #ffffff;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Odpovídá shadow-sm */
-        border-radius: 1rem; /* Odpovídá rounded-4 */
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        /* Odpovídá shadow-sm */
+        border-radius: 1rem;
+        /* Odpovídá rounded-4 */
         height: 100%;
-        padding: 1.5rem; /* Odpovídá p-4 */
+        padding: 1.5rem;
+        /* Odpovídá p-4 */
     }
-    
+
     /* Pravidlo pro PC a velké tablety (od 992px výše) */
     @media (min-width: 992px) {
         .card-responsive {
             background-color: transparent !important;
             box-shadow: none !important;
         }
+    }
+</style>
+
+
+
+
+<style>
+    .code-box {
+        position: relative;
+        background: #fff;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    button.copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    pre {
+        margin-top: 30px;
+        overflow-x: auto;
     }
 </style>
