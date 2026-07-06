@@ -22,13 +22,13 @@
     }
 @endphp
 
-<section class="mt-0 mx-2 mx-lg-4 rounded-4 shadow-lg text-white border-top border-info border-4 overflow-hidden position-relative"
+<section class="hero-default-header mt-0 mx-2 mx-lg-4 rounded-4 shadow-lg text-white border-top border-info border-4 overflow-hidden position-relative"
     style="background: linear-gradient(135deg, #03444c 0%, #07d1db 100%);">
 
     <div id="myCarousel" class="carousel slide" @if($totalSlides > 1) data-bs-ride="carousel" @endif>
 
         @if($totalSlides > 1)
-            <div class="carousel-indicators mb-0 pb-2">
+            <div class="carousel-indicators mb-0">
                 @foreach($slides as $index => $slide)
                     <button type="button"
                         data-bs-target="#myCarousel"
@@ -40,26 +40,27 @@
             </div>
         @endif
 
-        <div class="carousel-inner">
+        <div class="carousel-inner pb-0">
             @foreach($slides as $index => $slide)
                 <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                    <div class="container py-5 position-relative">
-                        <div class="row align-items-center g-5 py-3">
+                    <div class="container py-3 py-lg-4 position-relative">
+                        <div class="row align-items-center g-3 g-lg-4">
                             <div class="col-lg-7 text-center text-lg-start">
-                                <h1 class="display-3 fw-bold mb-4 text-white" style="line-height: 1.15; letter-spacing: -1px;">
+                                <h1 class="display-5 fw-bold mb-2 text-white" style="line-height: 1.2; letter-spacing: -0.5px;">
                                     {{ $slide['title'] }}
                                 </h1>
 
-                                <p class="lead mb-0 mx-auto mx-lg-0 text-white-90" style="max-width: 560px; font-size: 1.2rem;">
+                                <p class="lead mb-0 mx-auto mx-lg-0 text-white-90" style="max-width: 560px; font-size: 1.05rem;">
                                     {{ $slide['text'] }}
                                 </p>
                             </div>
 
                             <div class="col-lg-5 text-center">
-                                <div class="bg-white text-dark p-3 rounded-4 shadow-lg border border-info border-opacity-10">
-                                    <img src="{{ $slide['img'] }}"
-                                        alt="{{ $slide['title'] }}"
-                                        class="img-fluid rounded-3 shadow-sm">
+                                <div class="hero-default-img-frame bg-white text-dark rounded-3 shadow border border-info border-opacity-10 mx-auto" style="max-width: 380px;">
+                                    <div class="hero-default-img-wrap">
+                                        <img src="{{ $slide['img'] }}"
+                                            alt="{{ $slide['title'] }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>

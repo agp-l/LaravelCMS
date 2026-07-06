@@ -42,6 +42,39 @@
         z-index: 2;
     }
 
+    /* Hero default slider – přepis globálních carousel stylů */
+    .hero-default-header .carousel-item {
+        height: auto;
+        background: none;
+        overflow: visible;
+    }
+
+    .hero-default-header .carousel-item::before {
+        display: none;
+    }
+
+    .hero-default-header .carousel-indicators {
+        margin-bottom: 0;
+        padding-bottom: 0.35rem;
+    }
+
+    .hero-default-img-frame {
+        padding: 0.4rem;
+    }
+
+    .hero-default-img-wrap {
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 0.375rem;
+    }
+
+    .hero-default-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
 
     .overlay {
         position: absolute;
