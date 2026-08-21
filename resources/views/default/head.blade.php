@@ -43,6 +43,29 @@
     }
 
     /* Hero default slider – přepis globálních carousel stylů */
+    .hero-default-header {
+        background: linear-gradient(135deg, #03444c 0%, #056b74 45%, #07d1db 100%);
+    }
+
+    .hero-default-header::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
+            radial-gradient(circle at 10% 80%, rgba(7, 209, 219, 0.18) 0%, transparent 38%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .hero-default-header .carousel,
+    .hero-default-header .carousel-inner,
+    .hero-default-header .carousel-item,
+    .hero-default-header .carousel-item .container {
+        position: relative;
+        z-index: 1;
+    }
+
     .hero-default-header .carousel-item {
         height: auto;
         background: none;
@@ -53,19 +76,66 @@
         display: none;
     }
 
-    .hero-default-header .carousel-indicators {
-        margin-bottom: 0;
-        padding-bottom: 0.35rem;
+    .hero-default-content {
+        padding: 2.75rem 0 3rem;
+    }
+
+    @media (min-width: 992px) {
+        .hero-default-content {
+            padding: 3.5rem 0 3.75rem;
+        }
+    }
+
+    .hero-default-title-accent {
+        width: 52px;
+        height: 3px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #07d1db 0%, rgba(255, 255, 255, 0.75) 100%);
+        margin: 0 auto 1.25rem;
+    }
+
+    @media (min-width: 992px) {
+        .hero-default-title-accent {
+            margin: 0 0 1.25rem;
+        }
+    }
+
+    .hero-default-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        line-height: 1.65;
+        max-width: 34rem;
+    }
+
+    .hero-default-img-col {
+        padding-top: 0.75rem;
+        padding-bottom: 1rem;
+    }
+
+    @media (min-width: 992px) {
+        .hero-default-img-col {
+            padding-top: 0.5rem;
+            padding-bottom: 1.25rem;
+        }
     }
 
     .hero-default-img-frame {
-        padding: 0.4rem;
+        padding: 0.65rem;
+        width: 100%;
+        max-width: 520px;
+        margin-inline: auto;
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow:
+            0 22px 45px rgba(0, 0, 0, 0.18),
+            0 0 0 1px rgba(7, 209, 219, 0.12);
+        backdrop-filter: blur(6px);
     }
 
     .hero-default-img-wrap {
         aspect-ratio: 16 / 9;
         overflow: hidden;
-        border-radius: 0.375rem;
+        border-radius: 0.65rem;
     }
 
     .hero-default-img-wrap img {
@@ -73,6 +143,65 @@
         height: 100%;
         object-fit: cover;
         display: block;
+        transition: transform 0.45s ease;
+    }
+
+    .hero-default-header .carousel-item.active .hero-default-img-wrap img {
+        transform: scale(1.02);
+    }
+
+    .hero-default-header .carousel-indicators {
+        margin-bottom: 0;
+        padding-bottom: 0.85rem;
+        gap: 0.35rem;
+    }
+
+    .hero-default-header .carousel-indicators [data-bs-target] {
+        width: 2.1rem;
+        height: 0.32rem;
+        border-radius: 999px;
+        border: 0;
+        opacity: 0.45;
+        transition: width 0.25s ease, opacity 0.25s ease;
+    }
+
+    .hero-default-header .carousel-indicators .active {
+        width: 2.75rem;
+        opacity: 1;
+    }
+
+    .hero-default-header .carousel-control-prev,
+    .hero-default-header .carousel-control-next {
+        width: 3rem;
+        height: 3rem;
+        top: 50%;
+        transform: translateY(-50%);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        opacity: 0.9;
+        transition: background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .hero-default-header .carousel-control-prev {
+        left: 1rem;
+    }
+
+    .hero-default-header .carousel-control-next {
+        right: 1rem;
+    }
+
+    .hero-default-header .carousel-control-prev:hover,
+    .hero-default-header .carousel-control-next:hover {
+        background: rgba(255, 255, 255, 0.24);
+        opacity: 1;
+    }
+
+    @media (max-width: 991.98px) {
+        .hero-default-header .carousel-control-prev,
+        .hero-default-header .carousel-control-next {
+            display: none;
+        }
     }
 
 

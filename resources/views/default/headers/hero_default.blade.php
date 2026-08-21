@@ -22,8 +22,7 @@
     }
 @endphp
 
-<section class="hero-default-header mt-0 mx-2 mx-lg-4 rounded-4 shadow-lg text-white border-top border-info border-4 overflow-hidden position-relative"
-    style="background: linear-gradient(135deg, #03444c 0%, #07d1db 100%);">
+<section class="hero-default-header mt-0 mx-2 mx-lg-4 rounded-4 shadow-lg text-white border-top border-info border-4 overflow-hidden position-relative">
 
     <div id="myCarousel" class="carousel slide" @if($totalSlides > 1) data-bs-ride="carousel" @endif>
 
@@ -43,20 +42,22 @@
         <div class="carousel-inner pb-0">
             @foreach($slides as $index => $slide)
                 <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                    <div class="container py-3 py-lg-4 position-relative">
-                        <div class="row align-items-center g-3 g-lg-4">
-                            <div class="col-lg-7 text-center text-lg-start">
-                                <h1 class="display-5 fw-bold mb-2 text-white" style="line-height: 1.2; letter-spacing: -0.5px;">
+                    <div class="container hero-default-content position-relative">
+                        <div class="row align-items-center g-4 g-lg-5">
+                            <div class="col-lg-6 text-center text-lg-start">
+                                <div class="hero-default-title-accent"></div>
+
+                                <h1 class="display-5 fw-bold mb-3 text-white" style="line-height: 1.22; letter-spacing: -0.4px;">
                                     {{ $slide['title'] }}
                                 </h1>
 
-                                <p class="lead mb-0 mx-auto mx-lg-0 text-white-90" style="max-width: 560px; font-size: 1.05rem;">
+                                <p class="hero-default-subtitle mb-0 mx-auto mx-lg-0">
                                     {{ $slide['text'] }}
                                 </p>
                             </div>
 
-                            <div class="col-lg-5 text-center">
-                                <div class="hero-default-img-frame bg-white text-dark rounded-3 shadow border border-info border-opacity-10 mx-auto" style="max-width: 380px;">
+                            <div class="col-lg-6 hero-default-img-col text-center">
+                                <div class="hero-default-img-frame rounded-4">
                                     <div class="hero-default-img-wrap">
                                         <img src="{{ $slide['img'] }}"
                                             alt="{{ $slide['title'] }}">
@@ -70,11 +71,11 @@
         </div>
 
         @if($totalSlides > 1)
-            <button class="carousel-control-prev" type="button" data-bs-target="#myCarousel" data-bs-slide="prev" style="width: 5%;">
+            <button class="carousel-control-prev" type="button" data-bs-target="#myCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Předchozí</span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#myCarousel" data-bs-slide="next" style="width: 5%;">
+            <button class="carousel-control-next" type="button" data-bs-target="#myCarousel" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Další</span>
             </button>
